@@ -947,7 +947,6 @@ function render() {
   renderReady();
   if (currentTab === 'preview') renderPreview();
 }
-<script>
 /* ====== One-page A4 portrait scaling ====== */
 
 /* คำนวณ px ต่อ 1 มม. แบบแม่น (อิงเรขาคณิตจริงที่เบราว์เซอร์ให้) */
@@ -1039,7 +1038,6 @@ if (mql) {
   if (!btn) return;
   btn.onclick = printSinglePage;
 })();
-</script>
 // ── Init ──────────────────────────────────────────────
 render();
 switchTab('input');
