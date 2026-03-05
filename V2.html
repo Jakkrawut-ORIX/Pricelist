@@ -300,18 +300,32 @@ table.price-table tr.goal-row td.g-dash { color: var(--text-muted); font-style: 
    PRINT
 ═══════════════════════════════════════════════════════ */
 @media print {
+  /* บังคับ A4 แนวตั้ง และเผื่อขอบ 10mm รอบด้าน */
   @page {
-    size: A4 landscape;
-    margin: 8mm 8mm 10mm 8mm;
+    size: A4 portrait;
+    margin: 10mm;
   }
 
+  /* พื้นฐานสำหรับโหมดพิมพ์ */
   body { background: #fff; font-size: 11px; }
 
+  /* ซ่อน UI อินพุต แสดงหน้า Preview */
   .topbar, #input-tab { display: none !important; }
   #preview-tab { display: block !important; }
 
-  .wrap { padding: 0; max-width: 100%; }
+  /* เอา padding ออก เพื่อให้คุมขนาดง่ายขึ้น */
+  .wrap { padding: 0; max-width: unset; }
 
+  /* กล่องที่จะถูกย่อให้พอดี 1 หน้า */
+  #print-area {
+    background: #fff !important;
+    color: #000 !important;
+    /* คีย์สำคัญ: ให้ย่อจากมุมซ้ายบน */
+    transform-origin: top left;
+    /* ปล่อยให้สคริปต์ปรับ transform: scale() เอง */
+  }
+
+  /* ปรับขนาดตัวอักษร/ระยะนิดหน่อยสำหรับโหมดพิมพ์ */
   .doc-header {
     border: none; border-top: 3px solid var(--navy); border-radius: 0;
     padding: 8px 0 10px; margin-bottom: 8px; box-shadow: none;
@@ -322,35 +336,21 @@ table.price-table tr.goal-row td.g-dash { color: var(--text-muted); font-style: 
 
   .table-card { border: none; border-radius: 0; box-shadow: none; overflow: visible; }
 
-  table.price-table { font-size: 9.5px; table-layout: fixed; width: 100%; }
+  /* ลดช่องไฟตาราง เพื่อให้กินพื้นที่น้อยลงก่อนย่อสเกล */
+  table.price-table { font-size: 9.5px; table-layout: auto; width: auto; }
   table.price-table thead tr.hd-main th { padding: 5px 7px; font-size: 8px; }
   table.price-table thead tr.hd-rate td { padding: 4px 7px; font-size: 8px; }
   table.price-table tr.brand-row td { padding: 6px 7px; font-size: 11px; }
   table.price-table tr.dp-row td { padding: 4px 7px; font-size: 9px; }
   table.price-table tr.dp-row td.monthly { font-size: 10px; }
   table.price-table tr.goal-row td { padding: 4px 7px; font-size: 9px; }
+
   .tbl-footer { padding: 10px 0; }
   .tbl-footer .vat-note { font-size: 10px; }
   .tbl-footer .cond-item { font-size: 9px; line-height: 1.7; }
 
-  /* Auto-scale: fit everything on page */
-  #print-area {
-    width: 100%;
-    transform-origin: top left;
-  }
-
-  /* Column widths */
-  table.price-table col.c-model { width: 22%; }
-  table.price-table col.c-price { width: 9%; }
-  table.price-table col.c-dpct  { width: 6%; }
-  table.price-table col.c-damt  { width: 9%; }
-  table.price-table col.c-fin   { width: 10%; }
-  table.price-table col.c-36    { width: 15%; }
-  table.price-table col.c-48    { width: 15%; }
-  table.price-table col.c-60    { width: 14%; }
-
+  /* หลีกเลี่ยงการตัดบรรทัดในแถว (ไม่ critical เพราะเราย่อทั้งหน้าอยู่แล้ว) */
   tr { page-break-inside: avoid; }
-  tr.brand-row { page-break-before: auto; }
 }
 
 /* ── Bulk paste ────────────────────────────────────── */
@@ -947,7 +947,99 @@ function render() {
   renderReady();
   if (currentTab === 'preview') renderPreview();
 }
+<script>
+/* ====== One-page A4 portrait scaling ====== */
 
+/* คำนวณ px ต่อ 1 มม. แบบแม่น (อิงเรขาคณิตจริงที่เบราว์เซอร์ให้) */
+function pxPerMm() {
+  const probe = document.createElement('div');
+  probe.style.width = '100mm';
+  probe.style.height = '0';
+  probe.style.position = 'absolute';
+  probe.style.visibility = 'hidden';
+  document.body.appendChild(probe);
+  const px = probe.getBoundingClientRect().width / 100;
+  probe.remove();
+  return px || 3.78; // fallback ~96dpi
+}
+
+/* ย่อ #print-area ให้พอดี A4 แนวตั้ง 1 หน้า (เผื่อ margin 10mm รอบด้าน) */
+function scaleToSingleA4() {
+  try {
+    const area = document.getElementById('print-area');
+    if (!area) return;
+
+    /* ให้แน่ใจว่าเราอยู่ในแท็บ Preview ก่อน */
+    if (typeof currentTab !== 'undefined' && currentTab !== 'preview') {
+      switchTab('preview');
+    }
+
+    /* รีเซ็ต transform เพื่อวัดขนาดจริง (ไม่ถูกย่อ) */
+    area.style.transform = 'none';
+    area.style.width = '';
+    area.style.height = '';
+
+    // บังคับ layout ให้เสร็จ (ป้องกันวัดก่อน render)
+    void area.offsetHeight;
+
+    const naturalW = Math.max(area.scrollWidth, area.offsetWidth);
+    const naturalH = Math.max(area.scrollHeight, area.offsetHeight);
+
+    const p = pxPerMm();
+    const availW = p * (210 - 20); // 10mm ซ้าย + 10mm ขวา
+    const availH = p * (297 - 20); // 10mm บน + 10mm ล่าง
+
+    const scale = Math.min(availW / naturalW, availH / naturalH, 1); // ไม่ขยายเกิน 100%
+    area.style.transform = `scale(${scale})`;
+
+    // ป้องกันการโดนตัดขอบ: ตั้งกรอบเท่าขนาดจริงก่อนสเกล
+    area.style.width = naturalW + 'px';
+    area.style.height = naturalH + 'px';
+  } catch (e) {
+    console.warn('scaleToSingleA4 error:', e);
+  }
+}
+
+/* รีเซ็ตหลังพิมพ์ (กลับสู่โหมดจอ) */
+function resetScaleAfterPrint() {
+  const area = document.getElementById('print-area');
+  if (!area) return;
+  area.style.transform = 'none';
+  area.style.width = '';
+  area.style.height = '';
+}
+
+/* ปุ่มพิมพ์: ย่อก่อน แล้วค่อยสั่งพิมพ์ */
+function printSinglePage() {
+  // สลับไป Preview, ย่อสเกล แล้วเปิด dialog
+  if (typeof switchTab === 'function') switchTab('preview');
+  // ให้ DOM ได้ layout เสร็จก่อน
+  setTimeout(() => {
+    scaleToSingleA4();
+    // รอ 1 เฟรมเพื่อให้ transform มีผล
+    requestAnimationFrame(() => window.print());
+  }, 0);
+}
+
+/* Hook เหตุการณ์ระบบพิมพ์ของเบราว์เซอร์ */
+window.addEventListener('beforeprint', scaleToSingleA4);
+window.addEventListener('afterprint', resetScaleAfterPrint);
+
+/* สำหรับบางเบราว์เซอร์ (เช่น Chrome) เวลาสลับโหมด preview */
+const mql = window.matchMedia && window.matchMedia('print');
+if (mql) {
+  const onChange = e => { if (e.matches) scaleToSingleA4(); else resetScaleAfterPrint(); };
+  if (mql.addEventListener) mql.addEventListener('change', onChange);
+  else if (mql.addListener) mql.addListener(onChange);
+}
+
+/* แทน onclick เดิมของปุ่มพิมพ์ให้เรียก printSinglePage() */
+(function attachPrintButtonHandler() {
+  const btn = document.getElementById('btn-print');
+  if (!btn) return;
+  btn.onclick = printSinglePage;
+})();
+</script>
 // ── Init ──────────────────────────────────────────────
 render();
 switchTab('input');
