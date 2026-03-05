@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Price List Generator – Financial Lease</title>
+  <!-- ฟอนต์ไทย -->
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      /* โทนสี: ขาว / น้ำเงิน / แดง / เทาอ่อน */
+      --bg: #ffffff;
+      --bg-soft: #f6f7fb;        /* เทาอ่อนมาก */
+      --card: #f3f4f6;           /* เทาอ่อน */
+      --border: #e5e7eb;         /* เส้นคั่นเทาอ่อน */
+      --text: #0f172a;           /* ตัวอักษรหลัก */
+      --muted: #64748b;          /* ตัวรอง */
+      --blue: #1e3a8a;           /* น้ำเงินเข้ม */
+      --blue-600: #2563eb;       /* น้ำเงินสด */
+      --blue-50: #eff6ff;        /* น้ำเงินอ่อนมาก */
+      --red: #dc2626;            /* แดง */
+      --red-700: #b91c1c;        /* แดงเข้ม */
+      --chip-blue: #1d4ed8;
+      --chip-green: #16a34a;
+      --chip-amber: #b45309;
+      --chip-blue-text: #1e40af;
+      --chip-green-text: #065f46;
+      --chip-amber-text: #92400e;
+      --table-head: #f8fafc;     /* พื้นหัวตาราง */
+      --table-alt: #fbfbfd;      /* แถวสลับอ่อน */
+      --pill-bg: #eef2ff;        /* พื้นแท่งสรุป */
+      --link: #1d4ed8;
+      --focus: #93c5fd;
+      --shadow: 0 4px 24px rgba(2, 6, 23, 0.06);
+    }
+    *{ box-sizing: border-box; }
+    body{
+      margin: 0; background: var(--bg); color: var(--text);
+      font-family: 'Sarabun','IBM Plex Sans Thai',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    }
+
+    /* Layout */
+    .container{ max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+    header{
+      border-bottom: 1px solid var(--border);
+      padding: 18px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .brand{
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .brand-top{ font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: .18em; text-transform: uppercase; }
+    .brand-main{ font-size: 22px; font-weight: 700; letter-spacing: -.02em; color: var(--blue); }
+    .brand-badge{
+      display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 4px;
+      color: var(--blue-600); background: var(--blue-50); border: 1px solid #dbeafe; width: fit-content;
+    }
+
+    /* Tabs & Buttons */
+    .tabs{ display: flex; gap: 6px; background: var(--bg-soft); border-radius: 12px; padding: 4px; }
+    .tab{
+      padding: 8px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; border: none; cursor: pointer;
+      color: var(--muted); background: transparent; transition: .2s;
+    }
+    .tab.active{ background: var(--blue-600); color: #fff; }
+    .btn{
+      padding: 10px 18px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer;
+      color: #fff; background: linear-gradient(135deg, var(--blue-600), var(--blue)); box-shadow: var(--shadow);
+    }
+    .btn-outline-red{
+      background: transparent; color: var(--red); border: 1px solid #f3d7d7;
+    }
+    .btn-ghost{
+      background: transparent; color: var(--link); border: 1px dashed #c7d2fe;
+    }
+
+    /* Cards & Sections */
+    .section{ padding: 22px 0; }
+    .section-title{
+      font-size: 13px; font-weight: 800; color: var(--blue); letter-spacing: .12em; text-transform: uppercase;
+      display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+    }
+    .card{
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px; box-shadow: var(--shadow);
+    }
+    .grid-2{ display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .grid-3{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+    /* Inputs */
+    .field{ display: flex; flex-direction: column; gap: 6px; }
+    .field label{
+      font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .06em; text-transform: uppercase;
+    }
+    .input-wrap{
+      display: flex; align-items: center; background: #fff; border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+    }
+    .prefix, .suffix{
+      padding: 0 10px; color: var(--muted); font-size: 13px; background: #fafafa; border-right: 1px solid var(--border);
+    }
+    .suffix{ border-right: none; border-left: 1px solid var(--border); background: #fafafa; }
+    .field input{
+      flex: 1; border: none; outline: none; padding: 10px 12px; background: transparent; font-size: 14px; color: var(--text);
+    }
+    .field input:focus{ box-shadow: inset 0 0 0 2px var(--focus); border-radius: 10px; }
+
+    /* Car card */
+    .car-card{
+      background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 12px;
+      display: flex; align-items: flex-end; gap: 12px;
+    }
+    .car-badge{
+      width: 28px; height: 28px; border-radius: 8px; background: var(--blue-50); color: var(--blue-600);
+      display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0; align-self: center;
+      border: 1px solid #dbeafe;
+    }
+    .car-remove{ padding: 6px 10px; border-radius: 8px; border: 1px solid #f3d7d7; color: var(--red); cursor: pointer; background: #fff; }
+
+    /* Preview Header */
+    .preview-header{
+      background: linear-gradient(90deg,#f8fafc,#eef2ff);
+      border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; margin-bottom: 10px;
+      border-bottom: 3px solid var(--blue-600);
+    }
+    .chips{ display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+    .chip{
+      padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; color: #fff;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .chip.blue{ background: var(--chip-blue); }
+    .chip.green{ background: var(--chip-green); }
+    .chip.amber{ background: var(--chip-amber); }
+
+    /* Table */
+    .table-card{ background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    table{ width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead tr:first-child{ background: var(--table-head); }
+    thead th{
+      padding: 10px 12px; text-align: right; color: var(--muted); font-size: 11px; font-weight: 800; white-space: nowrap; border-bottom: 1px solid var(--border);
+    }
+    thead th:first-child{ text-align: left; min-width: 200px; }
+    tbody td{ padding: 8px 12px; text-align: right; color: #111827; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    tbody tr:nth-child(even){ background: var(--table-alt); }
+    tbody .row-header{
+      background: #f1f5f9; color: var(--blue); font-weight: 800; font-size: 14px; border-top: 1px solid var(--border);
+    }
+
+    .foot-note{
+      padding: 16px 12px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; line-height: 1.9;
+      background: #fafafa;
+    }
+    .foot-note .ttl{ font-weight: 800; color: var(--blue); margin-bottom: 4px; }
+
+    /* Stat Pills (Quick preview) */
+    .pills{ display: flex; gap: 10px; flex-wrap: wrap; }
+    .pill{
+      display: inline-flex; align-items: center; gap: 8px; background: var(--pill-bg);
+      border: 1px solid #e0e7ff; color: var(--blue); border-radius: 10px; padding: 6px 12px; font-size: 12px; font-weight: 700;
+    }
+
+    /* Print */
+    @media print{
+      body *{ visibility: hidden; }
+      #print-area, #print-area *{ visibility: visible; }
+      #print-area{ position: absolute; inset: 0; background: #fff !important; color: #000 !important; padding: 12px 14px; }
+      header, .tabs, .btn, .car-remove, .btn-ghost{ display: none !important; }
+      .table-card, .preview-header, .card{ box-shadow: none !important; }
+    }
+
+    @media (max-width: 860px){
+      .grid-2{ grid-template-columns: 1fr; }
+      .grid-3{ grid-template-columns: 1fr; }
+      .car-card{ flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <span class="brand-top">Thai Orix</span>
+        <span class="brand-main">Price List Generator</span>
+        <span class="brand-badge">Financial Lease System</span>
+      </div>
+      <div style="display:flex; gap:12px; align-items:center;">
+        <div class="tabs">
+          <button class="tab active" id="tab-input">⚙ ตั้งค่า</button>
+          <button class="tab" id="tab-preview">📋 Price List</button>
+        </div>
+        <button class="btn" id="btn-print" style="display:none;">🖨 Print / PDF</button>
+      </div>
+    </header>
+
+    <!-- Input Section -->
+    <section class="section" id="input-section">
+      <div class="section-title"><span style="color:var(--blue);">▎</span> ข้อมูลบริษัท</div>
+      <div class="card">
+        <div class="grid-2">
+          <div class="field">
+            <label>ชื่อบริษัท</label>
+            <div class="input-wrap">
+              <input id="company" type="text" value="บริษัท ไทยโอริกซ์ลีสซิ่ง จำกัด" />
+            </div>
+          </div>
+          <div class="field">
+            <label>ประเภทสัญญา</label>
+            <div class="input-wrap">
+              <input id="leaseType" type="text" value="Financial Lease" />
+            </div>
+          </div>
+          <div class="field">
+            <label>ช่วงราคา (วันที่)</label>
+            <div class="input-wrap">
+              <input id="dateRange" type="text" value="1 กุมภาพันธ์ ถึง 31 มีนาคม 2569" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top:22px;"><span style="color:var(--blue);">▎</span> อัตราดอกเบี้ย (Flat Rate)</div>
+      <div class="card">
+        <div class="grid-3">
+          <div class="field">
+            <label>36 เดือน (%)</label>
+            <div class="input-wrap">
+              <input id="rate36" type="number" step="0.01" value="2.99" />
+              <span class="suffix">%</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>48 เดือน (%)</label>
+            <div class="input-wrap">
+              <input id="rate48" type="number" step="0.01" value="2.99" />
+              <span class="suffix">%</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>60 เดือน (%)</label>
+            <div class="input-wrap">
+              <input id="rate60" type="number" step="0.01" value="2.99" />
+              <span class="suffix">%</span>
+            </div>
+          </div>
+        </div>
+        <div class="grid-2" style="margin-top:14px;">
+          <div class="field">
+            <label>Subsidy (บาท)</label>
+            <div class="input-wrap">
+              <span class="prefix">฿</span>
+              <input id="subsidy" type="number" value="20000" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Target Monthly (บาท) – Goal Seek</label>
+            <div class="input-wrap">
+              <span class="prefix">฿</span>
+              <input id="targetMonthly" type="number" value="36000" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top:22px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="color:var(--blue);">▎</span> รุ่นรถยนต์
+          <span id="car-count" style="background: var(--blue-50); color: var(--blue-600); border: 1px solid #dbeafe; border-radius: 999px; padding: 2px 10px; font-size: 11px;">0 รุ่น</span>
+        </div>
+      </div>
+      <div id="car-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+      <button class="btn-ghost" id="btn-add" style="width:100%; padding:12px; border-radius:12px; margin-top:8px;">
+        + เพิ่มรุ่นรถ
+      </button>
+
+      <div id="quick-preview-wrap" style="display:none;">
+        <div class="section-title" style="margin-top:24px;"><span style="color:var(--blue);">▎</span> ตัวอย่างราคา (ดูทั้งหมดที่แท็บ Price List)</div>
+        <div class="card">
+          <div class="pills" id="quick-pills"></div>
+          <button class="btn" style="margin-top:14px;" id="btn-goto-preview">ดู Price List เต็ม →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Preview / Print Section -->
+    <section class="section" id="preview-section" style="display:none;">
+      <div id="print-area">
+        <div class="preview-header">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+            <div>
+              <div style="font-size:11px; color:var(--muted); letter-spacing:.15em; text-transform:uppercase; margin-bottom:4px;">ใบเสนอราคา</div>
+              <div style="font-size:20px; font-weight:800; color:var(--blue);" id="doc-company">บริษัท ไทยโอริกซ์ลีสซิ่ง จำกัด</div>
+              <div style="font-size:13px; color:var(--muted); margin-top:4px;">บริการลีสซิ่งรถยนต์ · <span id="doc-leaseType">Financial Lease</span></div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">ราคาตั้งแต่วันที่</div>
+              <div style="font-size:14px; color:#111827; font-weight:800;" id="doc-dateRange">1 กุมภาพันธ์ ถึง 31 มีนาคม 2569</div>
+              <div class="chips" style="margin-top:10px;">
+                <div class="chip blue" id="chip36">36m @ 2.99%</div>
+                <div class="chip green" id="chip48">48m @ 2.99%</div>
+                <div class="chip amber" id="chip60">60m @ 2.99%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-card" id="table-wrap">
+          <!-- ตารางจะถูกใส่ด้วย JS -->
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // ---------- Utilities ----------
+    const $ = (sel) => document.querySelector(sel);
+    const fmt = (n) => (Number(n) === 0 ? "0" : Math.round(Number(n) || 0).toLocaleString('th-TH'));
+    const DEPOSIT_LEVELS = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3];
+    const TERMS = [36, 48, 60];
+    const roundUp = v => Math.ceil(v);
+
+    // ค่างวดแบบ Flat rate
+    const calcMonthly = (finance, flatRate, years) => {
+      if (!finance || finance <= 0) return 0;
+      const totalInterest = finance * flatRate * years;
+      return roundUp((finance + totalInterest) / (years * 12));
+    };
+
+    // หาเงินดาวน์เพื่อให้ค่างวด = targetMonthly
+    // monthly = finance*(1 + rate*years)/(years*12)  => finance = target * years * 12 / (1 + rate*years)
+    const goalSeekDeposit = (adjustedPrice, targetMonthly, flatRate, years) => {
+      const finance = (targetMonthly * years * 12) / (1 + flatRate * years);
+      const deposit = Math.round(adjustedPrice - finance);
+      return Math.max(0, deposit);
+    };
+
+    // ---------- State ----------
+    let state = {
+      company: "บริษัท ไทยโอริกซ์ลีสซิ่ง จำกัด",
+      leaseType: "Financial Lease",
+      dateRange: "1 กุมภาพันธ์ ถึง 31 มีนาคม 2569",
+      rates: { 36: 2.99, 48: 2.99, 60: 2.99 },
+      subsidy: 20000,
+      targetMonthly: 36000,
+      cars: [
+        { id: 1, model: "BZ4X Long Range FWD", price: 1529000 },
+        { id: 2, model: "BZ4X Long Range AWD", price: 1649000 },
+        { id: 3, model: "Hilux TRAVO-e", price: 1491000 },
+      ],
+      nextId: 4,
+      activeTab: "input",
+    };
+
+    // ---------- DOM Elements ----------
+    const elCompany = $('#company');
+    const elLeaseType = $('#leaseType');
+    const elDateRange = $('#dateRange');
+    const elRate36 = $('#rate36');
+    const elRate48 = $('#rate48');
+    const elRate60 = $('#rate60');
+    const elSubsidy = $('#subsidy');
+    const elTargetMonthly = $('#targetMonthly');
+
+    const elTabInput = $('#tab-input');
+    const elTabPreview = $('#tab-preview');
+    const elBtnPrint = $('#btn-print');
+
+    const elInputSection = $('#input-section');
+    const elPreviewSection = $('#preview-section');
+
+    const elCarList = $('#car-list');
+    const elCarCount = $('#car-count');
+    const elBtnAdd = $('#btn-add');
+
+    const elQuickWrap = $('#quick-preview-wrap');
+    const elQuickPills = $('#quick-pills');
+    const elGotoPreview = $('#btn-goto-preview');
+
+    const elDocCompany = $('#doc-company');
+    const elDocLeaseType = $('#doc-leaseType');
+    const elDocDateRange = $('#doc-dateRange');
+    const elChip36 = $('#chip36');
+    const elChip48 = $('#chip48');
+    const elChip60 = $('#chip60');
+
+    const elTableWrap = $('#table-wrap');
+
+    // ---------- Renderers ----------
+    function renderCars(){
+      elCarList.innerHTML = '';
+      state.cars.forEach((car, idx) => {
+        const card = document.createElement('div');
+        card.className = 'car-card';
+
+        const badge = document.createElement('div');
+        badge.className = 'car-badge';
+        badge.textContent = String.fromCharCode(65 + idx);
+
+        const f1 = document.createElement('div');
+        f1.style.flex = '1';
+        f1.innerHTML = `
+          <div class="field">
+            <label>ชื่อรุ่น</label>
+            <div class="input-wrap">
+              <input type="text" value="${car.model || ''}" data-id="${car.id}" data-field="model" />
+            </div>
+          </div>
+        `;
+
+        const f2 = document.createElement('div');
+        f2.style.width = '180px';
+        f2.innerHTML = `
+          <div class="field">
+            <label>ราคา (บาท)</label>
+            <div class="input-wrap">
+              <input type="number" value="${car.price || 0}" data-id="${car.id}" data-field="price" />
+            </div>
+          </div>
+        `;
+
+        const btnRemove = document.createElement('button');
+        btnRemove.className = 'car-remove';
+        btnRemove.textContent = '✕';
+        btnRemove.title = 'ลบรุ่นนี้';
+        btnRemove.addEventListener('click', () => {
+          state.cars = state.cars.filter(c => c.id !== car.id);
+          renderAll();
+        });
+
+        card.appendChild(badge);
+        card.appendChild(f1);
+        card.appendChild(f2);
+        card.appendChild(btnRemove);
+        elCarList.appendChild(card);
+      });
+
+      // bind change events
+      elCarList.querySelectorAll('input').forEach(inp => {
+        inp.addEventListener('input', (e) => {
+          const id = Number(e.target.getAttribute('data-id'));
+          const field = e.target.getAttribute('data-field');
+          const value = field === 'price' ? (parseFloat(e.target.value) || 0) : e.target.value;
+          state.cars = state.cars.map(c => c.id === id ? { ...c, [field]: value } : c);
+          updateCountsAndQuick();
+        });
+      });
+
+      updateCountsAndQuick();
+    }
+
+    function updateCountsAndQuick(){
+      const validCount = state.cars.filter(c => c.model && c.price > 0).length;
+      elCarCount.textContent = `${validCount} รุ่น`;
+      renderQuickPreview();
+    }
+
+    function computePriceData(){
+      const { cars, rates, subsidy, targetMonthly } = state;
+      const valid = cars.filter(c => c.model && c.price > 0);
+      return valid.map(car => {
+        const adjustedPrice = (car.price || 0) - (subsidy || 0);
+        const rows = DEPOSIT_LEVELS.map(dp => {
+          const depositAmt = Math.round((car.price || 0) * dp);
+          const finance = adjustedPrice - depositAmt;
+          const row = { depositPct: dp, depositAmt, finance };
+          TERMS.forEach(term => {
+            const years = term / 12;
+            const rate = (rates[term] || 0) / 100;
+            row[term] = calcMonthly(finance, rate, years);
+          });
+          return row;
+        });
+
+        const goalRows = TERMS.map(term => {
+          const years = term / 12;
+          const rate = (rates[term] || 0) / 100;
+          const depositAmt = goalSeekDeposit(adjustedPrice, targetMonthly || 0, rate, years);
+          return { term, depositAmt };
+        });
+
+        return { ...car, rows, goalRows };
+      });
+    }
+
+    function renderQuickPreview(){
+      const data = computePriceData();
+      if (!data.length){ elQuickWrap.style.display = 'none'; return; }
+      elQuickWrap.style.display = 'block';
+      elQuickPills.innerHTML = '';
+      const first = data[0];
+      const sampleRows = first.rows.slice(0, 3);
+      sampleRows.forEach(row => {
+        const pill = document.createElement('div');
+        pill.className = 'pill';
+        pill.innerHTML = `
+          <span style="color:#1e293b;">${(row.depositPct * 100).toFixed(0)}%</span>
+          <span style="color:#94a3b8;">|</span>
+          <span style="color:#1e3a8a;">36m: ${fmt(row[36])}</span>
+          <span style="color:#94a3b8;">|</span>
+          <span style="color:#1e3a8a;">48m: ${fmt(row[48])}</span>
+          <span style="color:#94a3b8;">|</span>
+          <span style="color:#1e3a8a;">60m: ${fmt(row[60])}</span>
+        `;
+        elQuickPills.appendChild(pill);
+      });
+    }
+
+    function renderTable(){
+      const data = computePriceData();
+
+      if (!data.length){
+        elTableWrap.innerHTML = `
+          <div style="text-align:center; padding:60px 20px; color:var(--muted);">
+            <div style="font-size:48px; margin-bottom:12px;">📋</div>
+            <div style="font-size:16px;">เพิ่มข้อมูลรถและราคาเพื่อสร้าง Price List</div>
+          </div>
+        `;
+        return;
+      }
+
+      const headRates = `
+        <tr>
+          <th style="text-align:left;">Model</th>
+          <th>List Price</th>
+          <th>Deposit %</th>
+          <th>Deposit Amt</th>
+          <th>Finance Amt</th>
+          <th style="color:#1d4ed8; font-weight:900;">36 เดือน</th>
+          <th style="color:#16a34a; font-weight:900;">48 เดือน</th>
+          <th style="color:#b45309; font-weight:900;">60 เดือน</th>
+        </tr>
+        <tr>
+          <td colspan="5"></td>
+          <th style="color:#1d4ed8;">${state.rates[36]}%</th>
+          <th style="color:#16a34a;">${state.rates[48]}%</th>
+          <th style="color:#b45309;">${state.rates[60]}%</th>
+        </tr>
+      `;
+
+      let bodyHTML = '';
+      data.forEach((car, ci) => {
+        bodyHTML += `
+          <tr class="row-header">
+            <td colspan="8" style="padding:10px 12px;">${car.model}</td>
+          </tr>
+        `;
+
+        car.rows.forEach((row, ri) => {
+          bodyHTML += `
+            <tr>
+              ${ri === 0 ? `<td rowspan="${DEPOSIT_LEVELS.length}" style="text-align:left; vertical-align:top;"></td>` : ''}
+              ${ri === 0 ? `<td rowspan="${DEPOSIT_LEVELS.length}" style="font-weight:800;">${fmt(car.price)}</td>` : ''}
+              <td style="color:#334155;">${(row.depositPct * 100).toFixed(0)}%</td>
+              <td>${fmt(row.depositAmt)}</td>
+              <td>${fmt(row.finance)}</td>
+              <td style="font-weight:800; color:#1d4ed8;">${fmt(row[36])}</td>
+              <td style="font-weight:800; color:#16a34a;">${fmt(row[48])}</td>
+              <td style="font-weight:800; color:#b45309;">${fmt(row[60])}</td>
+            </tr>
+          `;
+        });
+
+        // Goal seek row
+        bodyHTML += `
+          <tr style="background:#fafafa; border-top:1px dashed var(--border);">
+            <td colspan="4" style="text-align:left; color:#475569; font-style:italic;">
+              Deposit for ${fmt(state.targetMonthly)} บาท/เดือน
+            </td>
+            <td></td>
+            ${TERMS.map(term => {
+              const gr = car.goalRows.find(g => g.term === term);
+              return `<td style="color:${gr && gr.depositAmt>0 ? '#64748b' : '#cbd5e1'}; font-size:12px;">${gr && gr.depositAmt>0 ? fmt(gr.depositAmt) : '–'}</td>`;
+            }).join('')}
+          </tr>
+        `;
+      });
+
+      elTableWrap.innerHTML = `
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>${headRates}</thead>
+            <tbody>${bodyHTML}</tbody>
+          </table>
+
+          <div class="foot-note">
+            <div class="ttl">ราคารวมภาษีมูลค่าเพิ่ม 7%</div>
+            <div>เงื่อนไขเพิ่มเติม</div>
+            <div>- ราคาดังกล่าวเป็นราคาเช่า-เพื่อซื้อรถยนต์ ภายใต้สัญญาเช่าการเงิน (Financial Lease)</div>
+            <div>- สัญญาแบบ Financial Lease ค่างวดหักค่าใช้จ่ายบริษัทได้สูงสุด ${fmt(state.targetMonthly)} บาท</div>
+            <div>- ใช้อัตราดอกเบี้ยคงที่ (Flat Rate) ในการคำนวณสำหรับทุกช่วงเงินดาวน์และระยะเวลาผ่อน</div>
+            <div>- เกณฑ์การพิจารณาสินเชื่อและเงื่อนไขเป็นไปตามนโยบายของบริษัทฯ ขอสงวนสิทธิ์ในการแก้ไขเปลี่ยนแปลงเงื่อนไข</div>
+            <div>- กรุณาติดต่อเจ้าหน้าที่ บจก.ไทยโอริกซ์ลีสซิ่ง สำหรับใบเสนอราคาอีกครั้ง</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderHeaderChipsAndMeta(){
+      elDocCompany.textContent = state.company || '';
+      elDocLeaseType.textContent = state.leaseType || '';
+      elDocDateRange.textContent = state.dateRange || '';
+      elChip36.textContent = `36m @ ${state.rates[36]}%`;
+      elChip48.textContent = `48m @ ${state.rates[48]}%`;
+      elChip60.textContent = `60m @ ${state.rates[60]}%`;
+    }
+
+    function renderTabs(){
+      if (state.activeTab === 'input'){
+        elInputSection.style.display = '';
+        elPreviewSection.style.display = 'none';
+        elBtnPrint.style.display = 'none';
+        elTabInput.classList.add('active');
+        elTabPreview.classList.remove('active');
+      } else {
+        elInputSection.style.display = 'none';
+        elPreviewSection.style.display = '';
+        elBtnPrint.style.display = '';
+        elTabInput.classList.remove('active');
+        elTabPreview.classList.add('active');
+      }
+    }
+
+    function renderAll(){
+      // inputs reflect state
+      elCompany.value = state.company;
+      elLeaseType.value = state.leaseType;
+      elDateRange.value = state.dateRange;
+      elRate36.value = state.rates[36];
+      elRate48.value = state.rates[48];
+      elRate60.value = state.rates[60];
+      elSubsidy.value = state.subsidy;
+      elTargetMonthly.value = state.targetMonthly;
+
+      renderTabs();
+      renderCars();
+      renderHeaderChipsAndMeta();
+      renderTable();
+    }
+
+    // ---------- Events ----------
+    // Company & meta
+    elCompany.addEventListener('input', e => { state.company = e.target.value; renderHeaderChipsAndMeta(); });
+    elLeaseType.addEventListener('input', e => { state.leaseType = e.target.value; renderHeaderChipsAndMeta(); });
+    elDateRange.addEventListener('input', e => { state.dateRange = e.target.value; renderHeaderChipsAndMeta(); });
+
+    // Rates & numbers
+    elRate36.addEventListener('input', e => { state.rates[36] = parseFloat(e.target.value)||0; renderHeaderChipsAndMeta(); renderTable(); renderQuickPreview(); });
+    elRate48.addEventListener('input', e => { state.rates[48] = parseFloat(e.target.value)||0; renderHeaderChipsAndMeta(); renderTable(); renderQuickPreview(); });
+    elRate60.addEventListener('input', e => { state.rates[60] = parseFloat(e.target.value)||0; renderHeaderChipsAndMeta(); renderTable(); renderQuickPreview(); });
+
+    elSubsidy.addEventListener('input', e => { state.subsidy = parseFloat(e.target.value)||0; renderTable(); renderQuickPreview(); });
+    elTargetMonthly.addEventListener('input', e => { state.targetMonthly = parseFloat(e.target.value)||0; renderTable(); renderQuickPreview(); });
+
+    // Tabs
+    elTabInput.addEventListener('click', () => { state.activeTab = 'input'; renderTabs(); });
+    elTabPreview.addEventListener('click', () => { state.activeTab = 'preview'; renderTabs(); renderHeaderChipsAndMeta(); renderTable(); });
+
+    // Print
+    elBtnPrint.addEventListener('click', () => window.print());
+
+    // Add car
+    elBtnAdd.addEventListener('click', () => {
+      state.cars.push({ id: state.nextId, model: '', price: 0 });
+      state.nextId += 1;
+      renderCars();
+    });
+
+    // Goto preview
+    elGotoPreview.addEventListener('click', () => {
+      state.activeTab = 'preview';
+      renderTabs();
+      renderHeaderChipsAndMeta();
+      renderTable();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // ---------- Init ----------
+    renderAll();
+  </script>
+</body>
+</html>
