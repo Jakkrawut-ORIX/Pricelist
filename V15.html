@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>Auto Price List Generator</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f5f5f5;
+margin:0;
+padding:30px;
+}
+
+.container{
+max-width:1000px;
+margin:auto;
+}
+
+h1{
+color:#d70000;
+}
+
+.card{
+background:white;
+padding:20px;
+margin-bottom:20px;
+border-radius:8px;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
+input{
+padding:6px;
+margin:4px;
+}
+
+button{
+padding:8px 14px;
+margin:4px;
+cursor:pointer;
+}
+
+.price-card{
+
+border:1px solid #ddd;
+border-radius:10px;
+padding:20px;
+margin-bottom:20px;
+background:white;
+page-break-inside:avoid;
+}
+
+.model-title{
+
+font-size:20px;
+font-weight:700;
+color:#d70000;
+}
+
+.model-price{
+margin-bottom:10px;
+}
+
+.price-table{
+
+width:100%;
+border-collapse:collapse;
+}
+
+.price-table th{
+
+background:#f0f0f0;
+}
+
+.price-table td,
+.price-table th{
+
+padding:6px 8px;
+border-bottom:1px solid #eee;
+text-align:right;
+}
+
+.price-table td:first-child,
+.price-table th:first-child{
+
+text-align:center;
+}
+
+@media print{
+
+body{
+background:white;
+}
+
+button{
+display:none;
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Toyota Financial Lease</h1>
+
+<div class="card">
+
+<label>Interest Rate (%)</label>
+<input id="rate" value="2.99">
+
+<label>Target Monthly (Goal Seek)</label>
+<input id="target" value="36000">
+
+</div>
+
+<div class="card">
+
+<h3>Add Model</h3>
+
+<input id="modelName" placeholder="Model Name">
+<input id="modelPrice" placeholder="Price">
+
+<button onclick="addModel()">Add Model</button>
+
+<div id="modelList"></div>
+
+</div>
+
+<div class="card">
+
+<button onclick="generate()">Generate Price List</button>
+<button onclick="exportExcel()">Export Excel</button>
+<button onclick="window.print()">Print</button>
+
+</div>
+
+<div id="priceList"></div>
+
+</div>
+
+<script>
+
+const VAT = 1.07;
+
+let models=[];
+
+function addModel(){
+
+const name=document.getElementById("modelName").value;
+const price=parseFloat(document.getElementById("modelPrice").value);
+
+if(!name||!price)return;
+
+models.push({name,price});
+
+renderModelList();
+
+document.getElementById("modelName").value="";
+document.getElementById("modelPrice").value="";
+
+}
+
+function renderModelList(){
+
+let html="";
+
+models.forEach((m,i)=>{
+
+html+=`
+<div>
+${m.name} - ${format(m.price)}
+<button onclick="removeModel(${i})">X</button>
+</div>
+`;
+
+});
+
+document.getElementById("modelList").innerHTML=html;
+
+}
+
+function removeModel(i){
+
+models.splice(i,1);
+renderModelList();
+
+}
+
+function format(x){
+
+return x.toLocaleString();
+
+}
+
+function calculateLease(price,dpRate,rate,years){
+
+const down=price*dpRate;
+const finance=price-down;
+const months=years*12;
+
+const monthlyEx=finance*(1+rate*years)/months;
+const monthlyIn=monthlyEx*VAT;
+
+return {
+
+down,
+finance,
+monthlyIn
+
+};
+
+}
+
+function calculateModel(model){
+
+const deposits=[0,5,10,15,20,25,30];
+const terms=[3,4,5];
+
+const rate=parseFloat(document.getElementById("rate").value)/100;
+
+const result=[];
+
+deposits.forEach(dp=>{
+
+const dpRate=dp/100;
+
+const row={dp,values:[]};
+
+terms.forEach(term=>{
+
+const r=calculateLease(
+model.price,
+dpRate,
+rate,
+term
+);
+
+row.values.push(Math.round(r.monthlyIn));
+
+});
+
+result.push(row);
+
+});
+
+return result;
+
+}
+
+function goalSeekDeposit(price,targetMonthly,rate,years){
+
+const months=years*12;
+
+let low=0;
+let high=price;
+
+for(let i=0;i<50;i++){
+
+const down=(low+high)/2;
+
+const finance=price-down;
+
+const monthly=finance*(1+rate*years)/months*VAT;
+
+if(monthly>targetMonthly)
+low=down;
+else
+high=down;
+
+}
+
+return Math.round(high);
+
+}
+
+function generate(){
+
+const rate=parseFloat(document.getElementById("rate").value)/100;
+const target=parseFloat(document.getElementById("target").value);
+
+let html="";
+
+models.forEach(model=>{
+
+const data=calculateModel(model);
+
+html+=`
+<div class="price-card">
+
+<div class="model-title">${model.name}</div>
+
+<div class="model-price">
+Price: ${format(model.price)}
+</div>
+
+<table class="price-table">
+
+<tr>
+<th>DP</th>
+<th>36M</th>
+<th>48M</th>
+<th>60M</th>
+</tr>
+`;
+
+data.forEach(r=>{
+
+html+=`
+<tr>
+<td>${r.dp}%</td>
+<td>${format(r.values[0])}</td>
+<td>${format(r.values[1])}</td>
+<td>${format(r.values[2])}</td>
+</tr>
+`;
+
+});
+
+const gs3=goalSeekDeposit(
+model.price,
+target,
+rate,
+3
+);
+
+html+=`
+
+<tr>
+<td>Goal Seek</td>
+<td>${format(gs3)}</td>
+<td>-</td>
+<td>-</td>
+</tr>
+
+</table>
+
+</div>
+`;
+
+});
+
+document.getElementById("priceList").innerHTML=html;
+
+}
+
+function exportExcel(){
+
+const rate=parseFloat(document.getElementById("rate").value)/100;
+
+const rows=[];
+
+models.forEach(model=>{
+
+const data=calculateModel(model);
+
+data.forEach(r=>{
+
+rows.push({
+
+Model:model.name,
+Price:model.price,
+DP:r.dp+"%",
+"36M":r.values[0],
+"48M":r.values[1],
+"60M":r.values[2]
+
+});
+
+});
+
+});
+
+const ws=XLSX.utils.json_to_sheet(rows);
+
+const wb=XLSX.utils.book_new();
+
+XLSX.utils.book_append_sheet(wb,ws,"PriceList");
+
+XLSX.writeFile(wb,"price_list.xlsx");
+
+}
+
+</script>
+
+</body>
+
+</html>
