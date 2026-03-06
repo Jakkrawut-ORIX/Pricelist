@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thai Orix — Modern Price List Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset & Base ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:       #003082;
+      --navy-dark:  #001d56;
+      --navy-mid:   #1a4faf;
+      --navy-light: #e8eef8;
+      --navy-pale:  #f2f5fc;
+      --gray-100:   #f5f6f9;
+      --gray-200:   #eaecf2;
+      --gray-300:   #d4d9e8;
+      --gray-700:   #4a5570;
+      --text:       #1e2440;
+      --text-sub:   #4a5570;
+      --text-muted: #8090b0;
+    }
+    body { font-family: 'Sarabun', sans-serif; background: var(--gray-100); color: var(--text); line-height: 1.5; }
+
+    /* ── Layout ─────────────────────────────────────── */
+    .topbar {
+      background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 100%);
+      padding: 0 28px; height: 60px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; color: #fff; }
+    .brand-icon { width: 32px; height: 32px; background: #fff; color: var(--navy); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+    
+    .tabs { display: flex; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 3px; }
+    .tab-btn { padding: 6px 18px; border: none; background: transparent; color: #fff; cursor: pointer; border-radius: 6px; font-weight: 600; transition: 0.2s; }
+    .tab-btn.active { background: #fff; color: var(--navy); }
+
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 25px; }
+    .card { background: #fff; border: 1px solid var(--gray-300); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+
+    /* ── Form Controls ─────────────────────────────────────── */
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+    .field label { display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; }
+    .input-wrap { display: flex; border: 1.5px solid var(--gray-300); border-radius: 8px; overflow: hidden; }
+    .input-wrap input { flex: 1; border: none; padding: 8px 12px; outline: none; }
+    .input-wrap span { background: var(--navy-pale); padding: 8px 10px; font-size: 13px; color: var(--navy); }
+
+    /* ── Modern Price List Preview ── */
+    #print-area { background: #f4f7fa; padding: 20px; border-radius: 16px; }
+    .car-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,48,130,0.08); margin-bottom: 25px; border: 1px solid #e2e8f0; overflow: hidden; page-break-inside: avoid; }
+    .car-card-header { background: linear-gradient(90deg, #003082, #1a4faf); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; color: #fff; }
+    .car-card-header .model-name { font-size: 18px; font-weight: 700; }
+    .car-card-header .price-tag { font-size: 14px; opacity: 0.9; }
+    
+    .table-modern { width: 100%; border-collapse: collapse; }
+    .table-modern th { background: #f8fafc; padding: 12px 15px; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; border-bottom: 2px solid #edf2f7; text-align: right; }
+    .table-modern td { padding: 14px 15px; text-align: right; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+    .table-modern td.dp-label { font-weight: 700; color: #1e2440; text-align: left; border-right: 1px solid #f1f5f9; }
+    
+    .m-cell { font-weight: 800; font-size: 15px; }
+    .m-36 { color: #003082; background: rgba(0,48,130,0.02); }
+    .m-48 { color: #1040a0; background: rgba(16,64,160,0.02); }
+    .m-60 { color: #2a5ec8; background: rgba(42,94,200,0.02); }
+
+    .goal-banner { background: #fffbeb; padding: 15px 24px; display: flex; align-items: center; border-top: 2px dashed #fcd34d; }
+    .goal-title { font-size: 12px; font-weight: 700; color: #b45309; flex: 1; }
+    .goal-values { display: flex; gap: 20px; }
+    .goal-item { text-align: right; }
+    .goal-item label { display: block; font-size: 10px; color: #d97706; margin-bottom: 2px; }
+    .goal-item span { font-weight: 800; color: #92400e; font-size: 14px; }
+
+    /* Buttons */
+    .btn-add { width: 100%; padding: 12px; border: 2px dashed var(--gray-400); border-radius: 12px; background: transparent; cursor: pointer; color: var(--navy); font-weight: 600; }
+    .btn-print { background: var(--navy-mid); color: #fff; padding: 8px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; display: none; }
+
+    @media print {
+      body { background: #fff; }
+      .topbar, #input-tab { display: none !important; }
+      #preview-tab { display: block !important; padding: 0; }
+      #print-area { padding: 0; background: transparent; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand"><div class="brand-icon">TO</div> <span>Thai Orix Leasing</span></div>
+    <div class="tabs">
+      <button class="tab-btn active" id="btn-input" onclick="switchTab('input')">ตั้งค่า</button>
+      <button class="tab-btn" id="btn-preview" onclick="switchTab('preview')">ดู Price List</button>
+    </div>
+    <button class="btn-print" id="btn-print-action" onclick="window.print()">🖨 พิมพ์ PDF</button>
+  </div>
+
+  <div class="wrap">
+    <div id="input-tab">
+      <div class="card">
+        <div class="grid-3">
+          <div class="field"><label>บริษัท</label><div class="input-wrap"><input type="text" id="company" value="บริษัท ไทยโอริกซ์ลีสซิ่ง จำกัด"></div></div>
+          <div class="field"><label>ประเภทสัญญา</label><div class="input-wrap"><input type="text" id="lease-type" value="Financial Lease"></div></div>
+          <div class="field"><label>ช่วงเวลา</label><div class="input-wrap"><input type="text" id="date-range" value="มีนาคม 2569"></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="grid-3">
+          <div class="field"><label>36m Rate (%)</label><div class="input-wrap"><input type="number" id="rate36" value="2.99"><span>%</span></div></div>
+          <div class="field"><label>48m Rate (%)</label><div class="input-wrap"><input type="number" id="rate48" value="2.99"><span>%</span></div></div>
+          <div class="field"><label>60m Rate (%)</label><div class="input-wrap"><input type="number" id="rate60" value="3.19"><span>%</span></div></div>
+          <div class="field"><label>Subsidy (บาท)</label><div class="input-wrap"><span>฿</span><input type="number" id="subsidy" value="20000"></div></div>
+          <div class="field"><label>Target ค่างวด (บาท)</label><div class="input-wrap"><span>฿</span><input type="number" id="target" value="15000"></div></div>
+        </div>
+      </div>
+
+      <div id="car-list"></div>
+      <button class="btn-add" onclick="addCar()">+ เพิ่มรุ่นรถยนต์</button>
+    </div>
+
+    <div id="preview-tab" style="display:none;">
+      <div id="print-area">
+        <div id="doc-header"></div>
+        <div id="price-table-wrap"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let cars = [{ id: 1, model: 'Sample Car Model A', price: 1200000 }];
+    const DEPOSITS = [0.10, 0.15, 0.20, 0.25, 0.30];
+    const TERMS = [36, 48, 60];
+
+    const g = id => document.getElementById(id);
+    const gv = id => g(id).value;
+    const gn = id => parseFloat(g(id).value) || 0;
+    const fmt = n => Math.round(n).toLocaleString();
+    const fmtPct = v => (v * 100).toFixed(0) + '%';
+
+    function switchTab(tab) {
+      g('input-tab').style.display = tab === 'input' ? 'block' : 'none';
+      g('preview-tab').style.display = tab === 'preview' ? 'block' : 'none';
+      g('btn-input').classList.toggle('active', tab === 'input');
+      g('btn-preview').classList.toggle('active', tab === 'preview');
+      g('btn-print-action').style.display = tab === 'preview' ? 'block' : 'none';
+      if (tab === 'preview') renderPreview();
+    }
+
+    function addCar() {
+      cars.push({ id: Date.now(), model: '', price: 0 });
+      renderInputList();
+    }
+
+    function updateCar(id, field, value) {
+      const car = cars.find(c => c.id === id);
+      if (car) car[field] = value;
+    }
+
+    function renderInputList() {
+      const list = g('car-list');
+      list.innerHTML = cars.map(car => `
+        <div class="card" style="display:flex; gap:15px; align-items:flex-end;">
+          <div class="field" style="flex:2;"><label>ชื่อรุ่น</label><div class="input-wrap"><input type="text" value="${car.model}" oninput="updateCar(${car.id}, 'model', this.value)"></div></div>
+          <div class="field" style="flex:1;"><label>ราคา</label><div class="input-wrap"><span>฿</span><input type="number" value="${car.price}" oninput="updateCar(${car.id}, 'price', parseFloat(this.value))"></div></div>
+        </div>
+      `).join('');
+    }
+
+    function calcData() {
+      const sub = gn('subsidy');
+      const rates = { 36: gn('rate36')/100, 48: gn('rate48')/100, 60: gn('rate60')/100 };
+      const tgt = gn('target');
+
+      return cars.filter(c => c.model && c.price > 0).map(car => {
+        const adj = car.price - sub;
+        const rows = DEPOSITS.map(dp => {
+          const dAmt = car.price * dp;
+          const fin = adj - dAmt;
+          return {
+            dp, dAmt, fin,
+            36: Math.ceil(fin * (1 + rates[36] * 3) / 36),
+            48: Math.ceil(fin * (1 + rates[48] * 4) / 48),
+            60: Math.ceil(fin * (1 + rates[60] * 5) / 60)
+          };
+        });
+        
+        // Simple Goal Seek for Deposit
+        const goal = TERMS.map(t => {
+           const neededFin = (tgt * t) / (1 + rates[t] * (t/12));
+           const neededDown = adj - neededFin;
+           return { t, d: Math.max(0, neededDown) };
+        });
+
+        return { ...car, rows, goal };
+      });
+    }
+
+    function renderPreview() {
+      const data = calcData();
+      const tgt = gn('target');
+      
+      g('doc-header').innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px;">
+          <div><h1 style="color:var(--navy);">${gv('company')}</h1><p>${gv('lease-type')} | ตารางค่างวด</p></div>
+          <div style="text-align:right;"><p style="font-size:12px; color:gray;">มีผลถึง:</p><strong>${gv('date-range')}</strong></div>
+        </div>
+      `;
+
+      g('price-table-wrap').innerHTML = data.map(car => `
+        <div class="car-card">
+          <div class="car-card-header"><div class="model-name">${car.model}</div><div class="price-tag">ราคา <strong>฿${fmt(car.price)}</strong></div></div>
+          <table class="table-modern">
+            <thead><tr><th style="text-align:left">เงินดาวน์</th><th>ยอดจัด</th><th>36 งวด</th><th>48 งวด</th><th>60 งวด</th></tr></thead>
+            <tbody>
+              ${car.rows.map(row => `
+                <tr>
+                  <td class="dp-label">${fmtPct(row.dp)} — ฿${fmt(row.dAmt)}</td>
+                  <td style="color:gray;">฿${fmt(row.fin)}</td>
+                  <td class="m-cell m-36">฿${fmt(row[36])}</td>
+                  <td class="m-cell m-48">฿${fmt(row[48])}</td>
+                  <td class="m-cell m-60">฿${fmt(row[60])}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <div class="goal-banner">
+            <div class="goal-title">📌 เงินดาวน์แนะนำเพื่อให้ค่างวดไม่เกิน ฿${fmt(tgt)}</div>
+            <div class="goal-values">
+              ${car.goal.map(g => `<div class="goal-item"><label>${g.t} งวด</label><span>฿${fmt(g.d)}</span></div>`).join('')}
+            </div>
+          </div>
+        </div>
+      `).join('') + `
+        <div style="margin-top:20px; font-size:11px; color:gray;">
+          * เงื่อนไขเป็นไปตามที่บริษัทกำหนด | ค่างวดรวม VAT 7% แล้ว | อัตราดอกเบี้ย Flat Rate
+        </div>
+      `;
+    }
+
+    renderInputList();
+  </script>
+</body>
+</html>
