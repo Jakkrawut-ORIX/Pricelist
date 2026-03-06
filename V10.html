@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Thai Orix — Price List Generator</title>
+  <!-- Fonts (วางลิงก์ fonts จริงในโปรเจกต์ของคุณตามต้องการ) -->
+  https://fonts.googleapis.com
+  https://fonts.gstatic.com
+  https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap
+  <style>
+    /* ── Reset ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Tokens ─────────────────────────────────────────────── */
+    :root {
+      --navy:       #003082;
+      --navy-dark:  #001d56;
+      --navy-mid:   #1a4faf;
+      --navy-light: #e8eef8;
+      --navy-pale:  #f2f5fc;
+      --blue:       #2a72d8;
+      --blue-light: #ddeaf8;
+      --gray-100:   #f5f6f9;
+      --gray-200:   #eaecf2;
+      --gray-300:   #d4d9e8;
+      --gray-400:   #b0bad0;
+      --gray-500:   #8090b0;
+      --gray-700:   #4a5570;
+      --gray-900:   #1e2440;
+      --white:      #ffffff;
+      --text:       #1e2440;
+      --text-sub:   #4a5570;
+      --text-muted: #8090b0;
+      --gold:       #b07800;
+      --gold-light: #fdf8ed;
+      --danger:     #b91c1c;
+      --danger-100: #fee2e2;
+      --danger-200: #fecaca;
+    }
+
+    /* ── Base ─────────────────────────────────────────────── */
+    body {
+      font-family: 'Sarabun', 'IBM Plex Sans Thai', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-size: 14px;
+      background: var(--gray-100);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    /* ── Screen layout ─────────────────────────────────────── */
+    .topbar {
+      background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 100%);
+      padding: 0 28px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 16px rgba(0,30,96,.3);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: var(--navy-mid);
+      border: 1.5px solid rgba(255,255,255,.2);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 15px; color: #fff; letter-spacing: -.5px;
+    }
+    .brand-name { font-size: 15px; font-weight: 700; color: #fff; }
+    .brand-sub { font-size: 10px; color: rgba(255,255,255,.45); letter-spacing: .12em; text-transform: uppercase; margin-top: 1px; }
+
+    .tabs { display: flex; background: rgba(255,255,255,.1); border-radius: 9px; padding: 3px; gap: 2px; }
+    .tab-btn {
+      padding: 7px 20px; border-radius: 7px; font-size: 13px; font-weight: 600;
+      cursor: pointer; border: none; font-family: inherit; color: rgba(255,255,255,.55);
+      background: transparent; transition: all .16s;
+    }
+    .tab-btn.active { background: #fff; color: var(--navy); }
+
+    .nav-right { display: flex; align-items: center; gap: 10px; }
+    .btn-print {
+      padding: 8px 18px; background: var(--navy-mid);
+      border: 1.5px solid rgba(255,255,255,.25); border-radius: 8px;
+      color: #fff; cursor: pointer; font-size: 13px; font-weight: 600;
+      font-family: inherit; transition: background .15s;
+      display: none;
+    }
+    .btn-print:hover { background: var(--blue); }
+
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 28px 24px; }
+
+    /* ── Section ─────────────────────────────────────────────── */
+    .sec-title {
+      font-size: 10px; font-weight: 700; color: var(--navy);
+      text-transform: uppercase; letter-spacing: .12em;
+      margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+    }
+    .sec-title::before {
+      content: ''; display: inline-block; width: 3px; height: 13px;
+      background: var(--navy-mid); border-radius: 2px;
+    }
+
+    .card {
+      background: var(--white); border: 1.5px solid var(--gray-300);
+      border-radius: 13px; padding: 20px; margin-bottom: 22px;
+      box-shadow: 0 1px 8px rgba(0,48,130,.05);
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+    .col-span-2 { grid-column: 1 / -1; }
+
+    /* ── Form controls ─────────────────────────────────────── */
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; }
+    .input-wrap {
+      display: flex; align-items: center;
+      background: var(--white); border: 1.5px solid var(--gray-300); border-radius: 8px;
+      overflow: hidden; transition: border-color .14s;
+    }
+    .input-wrap:focus-within { border-color: var(--navy); }
+    .input-wrap .pfx, .input-wrap .sfx {
+      padding: 0 10px; font-size: 13px; color: var(--navy-mid);
+      background: var(--navy-pale); border-right: 1.5px solid var(--gray-300);
+      white-space: nowrap; align-self: stretch; display: flex; align-items: center;
+    }
+    .input-wrap .sfx { border-right: none; border-left: 1.5px solid var(--gray-300); }
+    .input-wrap input {
+      flex: 1; border: none; outline: none; background: transparent;
+      color: var(--text); padding: 9px 12px; font-size: 14px; font-family: inherit;
+    }
+    .input-wrap input.sm { padding: 7px 10px; font-size: 13px; }
+
+    /* ── Car rows ─────────────────────────────────────────── */
+    #car-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+    .car-row {
+      background: var(--white); border: 1.5px solid var(--gray-300); border-radius: 11px;
+      padding: 12px 14px; display: flex; align-items: flex-end; gap: 10px;
+      box-shadow: 0 1px 4px rgba(0,48,130,.05);
+    }
+    .car-badge {
+      width: 28px; height: 28px; border-radius: 7px;
+      background: linear-gradient(135deg, var(--navy), var(--navy-mid));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; align-self: center;
+    }
+    .car-row .f-model { flex: 1; }
+    .car-row .f-price { width: 175px; }
+    .btn-remove {
+      background: var(--danger-100); border: 1.5px solid var(--danger-200); border-radius: 7px;
+      color: var(--danger); cursor: pointer; padding: 6px 11px;
+      font-size: 14px; flex-shrink: 0; line-height: 1; font-family: inherit;
+      transition: all .14s;
+    }
+    .btn-remove:hover { background: #fde8e8; }
+
+    .btn-add {
+      width: 100%; padding: 12px; background: transparent;
+      border: 2px dashed var(--gray-400); border-radius: 11px;
+      color: var(--navy-mid); cursor: pointer; font-size: 13px;
+      font-family: inherit; font-weight: 600; transition: all .16s;
+    }
+    .btn-add:hover { border-color: var(--navy); color: var(--navy); background: var(--navy-pale); }
+
+    /* ── Rate chips ─────────────────────────────────────────── */
+    .rate-chips { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+    .chip {
+      display: flex; align-items: center; gap: 7px;
+      background: var(--navy-light); border: 1.5px solid rgba(0,48,130,.12);
+      border-radius: 8px; padding: 7px 16px;
+    }
+    .chip .c-term { font-weight: 700; font-size: 15px; color: var(--navy); }
+    .chip .c-at { font-size: 11px; color: var(--text-muted); }
+    .chip .c-rate { font-weight: 700; font-size: 14px; color: var(--navy); }
+    .chip .c-label { font-size: 10px; color: var(--text-muted); letter-spacing: .05em; }
+    .chip.gold { background: var(--gold-light); border-color: rgba(176,120,0,.18); }
+    .chip.gold .c-term { color: var(--gold); }
+    .chip.gold .c-rate { color: var(--gold); }
+
+    /* ── Ready banner ─────────────────────────────────────── */
+    .ready-banner {
+      background: var(--navy-pale); border: 1.5px solid rgba(0,48,130,.15);
+      border-radius: 13px; padding: 18px 20px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    }
+    .ready-models { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .model-chip {
+      background: var(--white); border: 1.5px solid var(--gray-300);
+      border-radius: 7px; padding: 4px 12px; font-size: 12px;
+    }
+    .model-chip strong { color: var(--navy); }
+    .model-chip span { color: var(--text-muted); margin-left: 6px; }
+    .btn-preview {
+      padding: 10px 26px; background: var(--navy); border: none; border-radius: 9px;
+      color: #fff; cursor: pointer; font-size: 14px; font-weight: 700;
+      font-family: inherit; white-space: nowrap;
+      box-shadow: 0 2px 10px rgba(0,48,130,.25); transition: background .15s;
+    }
+    .btn-preview:hover { background: var(--navy-mid); }
+
+    /* ═══════════════════════════════════════════════════════
+       PREVIEW / PRINT AREA
+    ═══════════════════════════════════════════════════════ */
+    #preview-tab { display: none; }
+
+    .doc-header {
+      background: var(--white); border: 1.5px solid var(--gray-300);
+      border-top: 4px solid var(--navy); border-radius: 13px;
+      padding: 18px 24px; margin-bottom: 14px;
+      display: flex; justify-content: space-between; align-items: flex-start;
+      flex-wrap: wrap; gap: 12px;
+      box-shadow: 0 1px 8px rgba(0,48,130,.06);
+    }
+    .doc-title-label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .14em; margin-bottom: 4px; }
+    .doc-company { font-size: 21px; font-weight: 700; color: var(--navy); letter-spacing: -.01em; }
+    .doc-sub { font-size: 13px; color: var(--text-sub); margin-top: 3px; }
+    .doc-date-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; text-align: right; }
+    .doc-date { font-size: 14px; font-weight: 600; color: var(--text); text-align: right; }
+    .doc-terms { display: flex; gap: 7px; justify-content: flex-end; margin-top: 10px; flex-wrap: wrap; }
+    .term-pill {
+      padding: 4px 14px; border-radius: 7px; font-size: 12px; font-weight: 700;
+      background: var(--navy-light); color: var(--navy); border: 1.5px solid rgba(0,48,130,.15);
+    }
+
+    .table-card {
+      background: var(--white); border: 1.5px solid var(--gray-300); border-radius: 13px;
+      overflow: hidden; box-shadow: 0 1px 8px rgba(0,48,130,.06);
+    }
+
+    /* ── Price table ─────────────────────────────────────── */
+    table.price-table {
+      width: 100%; border-collapse: collapse; font-size: 13px;
+    }
+    table.price-table thead tr.hd-main th {
+      background: var(--navy); padding: 10px 13px;
+      font-size: 10px; font-weight: 700; letter-spacing: .06em; color: rgba(255,255,255,.6);
+      text-align: right; white-space: nowrap;
+    }
+    table.price-table thead tr.hd-main th.left { text-align: left; }
+    table.price-table thead tr.hd-main th.col-36 { background: #002060; color: #fff; border-left: 1px solid rgba(255,255,255,.12); }
+    table.price-table thead tr.hd-main th.col-48 { background: #1040a0; color: #fff; border-left: 1px solid rgba(255,255,255,.12); }
+    table.price-table thead tr.hd-main th.col-60 { background: #2a5ec8; color: #fff; border-left: 1px solid rgba(255,255,255,.12); }
+
+    table.price-table thead tr.hd-rate td {
+      background: var(--gray-200); padding: 6px 13px;
+      font-size: 11px; color: var(--text-muted); border-bottom: 2px solid var(--gray-300);
+    }
+    table.price-table thead tr.hd-rate td.rate-val {
+      text-align: center; font-weight: 800; border-left: 1px solid var(--gray-300);
+    }
+    table.price-table thead tr.hd-rate td.rate-36 { color: #002060; }
+    table.price-table thead tr.hd-rate td.rate-48 { color: #1040a0; }
+    table.price-table thead tr.hd-rate td.rate-60 { color: #2a5ec8; }
+
+    table.price-table tr.brand-row td {
+      background: linear-gradient(90deg, var(--navy-light) 0%, var(--gray-100) 100%);
+      padding: 9px 13px; font-weight: 700; font-size: 13px; color: var(--navy);
+      border-bottom: 1px solid var(--gray-300);
+    }
+    table.price-table tr.brand-row.has-border { border-top: 2px solid var(--navy); }
+
+    /* ชื่อรุ่น + ราคา ขวาในแถวเดียวกัน */
+    .brand-hdr {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+    }
+    .brand-hdr .model { font-weight: 700; color: var(--navy); }
+    .brand-hdr .price { font-weight: 800; color: var(--navy); white-space: nowrap; }
+
+    table.price-table tr.dp-row td {
+      padding: 7px 13px; text-align: right; border-bottom: 1px solid var(--gray-200);
+      color: var(--text-sub); white-space: nowrap;
+    }
+    table.price-table tr.dp-row:nth-child(even) { background: var(--gray-100); }
+    table.price-table tr.dp-row td.dp-pct { font-weight: 600; color: var(--text-sub); }
+    table.price-table tr.dp-row td.monthly {
+      font-weight: 700; font-size: 13px; border-left: 1px solid var(--gray-200);
+    }
+    table.price-table tr.dp-row td.m36 { color: #002060; background: rgba(0,32,96,.04); }
+    table.price-table tr.dp-row td.m48 { color: #1040a0; background: rgba(16,64,160,.04); }
+    table.price-table tr.dp-row td.m60 { color: #2a5ec8; background: rgba(42,94,200,.04); }
+    table.price-table tr.dp-row:nth-child(even) td.m36 { background: rgba(0,32,96,.08); }
+    table.price-table tr.dp-row:nth-child(even) td.m48 { background: rgba(16,64,160,.08); }
+    table.price-table tr.dp-row:nth-child(even) td.m60 { background: rgba(42,94,200,.08); }
+
+    table.price-table tr.goal-row td {
+      padding: 7px 13px; border-bottom: 2px solid var(--gray-300);
+      font-size: 12px; color: var(--gold); font-style: italic; font-weight: 600;
+      background: var(--gold-light);
+      border-top: 1px dashed var(--gray-400);
+    }
+    table.price-table tr.goal-row td.g-val { text-align: right; border-left: 1px solid var(--gray-300); font-style: normal; font-weight: 700; }
+    table.price-table tr.goal-row td.g-dash { color: var(--text-muted); font-style: normal; }
+
+    .tbl-footer {
+      background: var(--gray-100); border-top: 2px solid var(--gray-300); padding: 18px 20px;
+    }
+    .tbl-footer .vat-note { font-weight: 700; color: var(--navy); font-size: 13px; margin-bottom: 8px; }
+    .tbl-footer .cond-title { font-weight: 700; color: var(--text); font-size: 13px; margin-bottom: 5px; }
+    .tbl-footer .cond-item { font-size: 12px; color: var(--text-sub); line-height: 2; }
+
+    /* ═══════════════════════════════════════════════════════
+       PRINT (A4 portrait, single page, full width)
+    ═══════════════════════════════════════════════════════ */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 10mm;
+      }
+
+      html, body { margin: 0 !important; background: #fff; }
+      body { font-size: 11px; }
+
+      .topbar, #input-tab { display: none !important; }
+      #preview-tab { display: block !important; }
+
+      .wrap { padding: 0; max-width: unset; }
+
+      /* ล็อกความกว้างเต็มพื้นที่พิมพ์ (210-20 = 190mm), ย่อเฉพาะความสูงด้วย JS */
+      #print-area {
+        width: 190mm;
+        margin: 0;
+        transform-origin: top left;
+      }
+
+      .table-card { border: none; border-radius: 0; box-shadow: none; overflow: visible; }
+
+      /* ให้ตารางกว้างเต็ม + กระจายคอลัมน์ */
+      table.price-table { width: 100%; table-layout: fixed; font-size: 9.5px; }
+      .price-table th, .price-table td { word-break: break-word; }
+
+      /* ลดช่องไฟเพื่อประหยัดพื้นที่ก่อนย่อสเกล */
+      table.price-table thead tr.hd-main th { padding: 5px 7px; font-size: 8px; }
+      table.price-table thead tr.hd-rate td { padding: 4px 7px; font-size: 8px; }
+      table.price-table tr.brand-row td { padding: 6px 7px; font-size: 11px; }
+      table.price-table tr.dp-row td { padding: 4px 7px; font-size: 9px; }
+      table.price-table tr.dp-row td.monthly { font-size: 10px; }
+      table.price-table tr.goal-row td { padding: 4px 7px; font-size: 9px; }
+
+      .doc-header {
+        border: none; border-top: 3px solid var(--navy); border-radius: 0;
+        padding: 8px 0 10px; margin-bottom: 8px; box-shadow: none;
+      }
+      .doc-company { font-size: 15px; }
+      .doc-sub, .doc-date { font-size: 11px; }
+      .doc-terms .term-pill { font-size: 10px; padding: 3px 9px; }
+
+      .tbl-footer { padding: 10px 0; }
+      .tbl-footer .vat-note { font-size: 10px; }
+      .tbl-footer .cond-item { font-size: 9px; line-height: 1.7; }
+
+      tr { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ TOPBAR ══════════════════════════════════════════ -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-icon">TO</div>
+      <div>
+        <div class="brand-name">Thai Orix Leasing</div>
+        <div class="brand-sub">Price List Generator</div>
+      </div>
+    </div>
+    <div class="nav-right">
+      <div class="tabs">
+        <button class="tab-btn active" id="btn-tab-input" onclick="switchTab('input')">⚙ ตั้งค่า</button>
+        <button class="tab-btn" id="btn-tab-preview" onclick="switchTab('preview')">📋 Price List</button>
+      </div>
+      <button class="btn-print" id="btn-print" onclick="printSinglePage()">🖨 Print / PDF</button>
+    </div>
+  </div>
+
+  <!-- ═══ WRAP ══════════════════════════════════════════════ -->
+  <div class="wrap">
+
+    <!-- ─── INPUT TAB ─────────────────────────────────────── -->
+    <div id="input-tab">
+
+      <div class="sec-title">ข้อมูลบริษัทและเอกสาร</div>
+      <div class="card">
+        <div class="grid-2">
+          <div class="field">
+            <label>ชื่อบริษัท</label>
+            <div class="input-wrap"><input type="text" id="company" value="บริษัท ไทยโอริกซ์ลีสซิ่ง จำกัด" oninput="render()"></div>
+          </div>
+          <div class="field">
+            <label>ประเภทสัญญา</label>
+            <div class="input-wrap"><input type="text" id="lease-type" value="Financial Lease" oninput="render()"></div>
+          </div>
+          <div class="field col-span-2">
+            <label>ช่วงระยะเวลาราคา</label>
+            <div class="input-wrap"><input type="text" id="date-range" value="1 กุมภาพันธ์ ถึง 31 มีนาคม 2569" oninput="render()"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-title">อัตราดอกเบี้ย & เงื่อนไขการเงิน</div>
+      <div class="card">
+        <div class="grid-3">
+          <div class="field">
+            <label>อัตรา 36 เดือน</label>
+            <div class="input-wrap">
+              <input type="number" id="rate36" value="2.99" step="0.01" oninput="render()">
+              <span class="sfx">% </span>
+            </div>
+          </div>
+          <div class="field">
+            <label>อัตรา 48 เดือน</label>
+            <div class="input-wrap">
+              <input type="number" id="rate48" value="2.99" step="0.01" oninput="render()">
+              <span class="sfx">% </span>
+            </div>
+          </div>
+          <div class="field">
+            <label>อัตรา 60 เดือน</label>
+            <div class="input-wrap">
+              <input type="number" id="rate60" value="2.99" step="0.01" oninput="render()">
+              <span class="sfx">% </span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Subsidy (บาท)</label>
+            <div class="input-wrap">
+              <span class="pfx">฿</span>
+              <input type="number" id="subsidy" value="20000" oninput="render()">
+            </div>
+          </div>
+          <div class="field col-span-2">
+            <label>Target Monthly — Goal Seek (บาท)</label>
+            <div class="input-wrap">
+              <span class="pfx">฿</span>
+              <input type="number" id="target" value="36000" oninput="render()">
+            </div>
+          </div>
+        </div>
+        <div class="rate-chips" id="rate-chips"></div>
+      </div>
+
+      <div class="car-sec-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div class="sec-title" id="car-sec-title" style="margin-bottom:0">รุ่นรถยนต์</div>
+        <button class="btn-bulk-toggle" id="btn-bulk" onclick="toggleBulk()"
+          style="font-size:12px;font-weight:600;font-family:inherit;padding:6px 14px;border-radius:7px;cursor:pointer;background:var(--navy-pale);border:1.5px solid var(--navy-light);color:var(--navy);transition:all .14s;">
+          📋 วางข้อมูลเป็นชุด
+        </button>
+      </div>
+
+      <!-- Bulk paste panel -->
+      <div id="bulk-panel" class="bulk-panel" style="display:none;">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">วางข้อมูลรถเป็นชุด</div>
+        <div class="bulk-hint">
+          รองรับรูปแบบ:<br />
+          &nbsp;• Copy จาก Excel (Tab): <code>ชื่อรุ่น [Tab] ราคา</code><br />
+          &nbsp;• CSV: <code>ชื่อรุ่น, ราคา</code> &nbsp;หรือ&nbsp; <code>ชื่อรุ่น | ราคา</code><br />
+          &nbsp;• ราคามี comma ได้ เช่น <code>1,199,000</code>
+        </div>
+        <textarea id="bulk-input" placeholder="ตัวอย่าง:
+ZEEKR X Standard RWD    1,199,000
+ZEEKR X Flagship AWD    1,349,000
+ZEEKR 7X Long Range RWD    1,599,000" oninput="parseBulkPreview()" spellcheck="false"
+          style="width:100%;min-height:130px;padding:12px 14px;background:var(--gray-100);border:1.5px solid var(--gray-300);border-radius:9px;font-family:'Sarabun', monospace;font-size:13px;color:var(--text);resize:vertical;outline:none;line-height:1.7;transition:border-color .14s;"></textarea>
+        <div id="bulk-preview-wrap" style="display:none;">
+          <div class="bulk-preview-label" style="font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.1em;margin:12px 0 6px;">ตัวอย่างที่จะนำเข้า</div>
+          <div class="bulk-preview-list" id="bulk-preview-list" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;margin-bottom:4px;"></div>
+        </div>
+        <div class="bulk-error-msg" id="bulk-error" style="font-size:12px;color:#a04040;background:#fff5f5;border:1.5px solid #e8c0c0;border-radius:7px;padding:8px 12px;margin-top:8px;display:none;"></div>
+        <div class="bulk-actions" style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+          <button class="btn-import" id="btn-import" onclick="importBulk(false)" disabled
+            style="padding:8px 20px;background:var(--navy);border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;transition:background .14s;">
+            + เพิ่มเข้ารายการ (<span id="import-count">0</span> รุ่น)
+          </button>
+          <button class="btn-import-replace" id="btn-import-replace" onclick="importBulk(true)" disabled
+            style="padding:8px 20px;background:transparent;border:1.5px solid var(--navy);border-radius:8px;color:var(--navy);cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;transition:all .14s;">
+            แทนที่ทั้งหมด
+          </button>
+          <button class="btn-bulk-cancel" onclick="toggleBulk()"
+            style="padding:8px 16px;background:transparent;border:1.5px solid var(--gray-300);border-radius:8px;color:var(--text-muted);cursor:pointer;font-size:13px;font-family:inherit;transition:all .14s;">
+            ยกเลิก
+          </button>
+        </div>
+      </div>
+
+      <div id="car-list"></div>
+      <button class="btn-add" onclick="addCar()">+ เพิ่มรุ่นรถ</button>
+
+      <div id="ready-banner" style="margin-top:20px;display:none;">
+        <div class="ready-banner">
+          <div>
+            <div style="font-weight:700;color:var(--navy);font-size:14px;" id="ready-title"></div>
+            <div class="ready-models" id="ready-models"></div>
+          </div>
+          <button class="btn-preview" onclick="switchTab('preview')">ดู Price List →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── PREVIEW TAB ────────────────────────────────────── -->
+    <div id="preview-tab">
+      <div id="print-area">
+        <div class="doc-header" id="doc-header"></div>
+        <div class="table-card">
+          <div id="price-table-wrap"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /wrap -->
+
+  <!-- █████ Script 1: แอปหลัก █████ -->
+  <script>
+    // ── State ─────────────────────────────────────────────
+    const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const DEPOSITS = [0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30];
+    const TERMS = [36, 48, 60];
+    let cars = [
+      { id: 1, model: 'BZ4X Long Range FWD',  price: 1529000 },
+      { id: 2, model: 'BZ4X Long Range AWD',  price: 1649000 },
+      { id: 3, model: 'Hilux TRAVO-e',        price: 1491000 },
+    ];
+    let nextId = 4;
+    let currentTab = 'input';
+
+    // ── Math ──────────────────────────────────────────────
+    const roundUp = v => Math.ceil(v);
+    const calcMonthly = (finance, flatRate, years) => {
+      if (finance <= 0) return 0;
+      return roundUp(finance * (1 + flatRate * years) / (years * 12));
+    };
+    const goalSeekDeposit = (adjPrice, target, flatRate, years) => {
+      const finance = target * years * 12 / (1 + flatRate * years);
+      return Math.max(0, Math.round(adjPrice - finance));
+    };
+    const fmt = n => n === 0 ? '0' : Math.round(n).toLocaleString('th-TH');
+    const fmtPct = v => (v * 100).toFixed(0) + '%';
+
+    // ── Getters ───────────────────────────────────────────
+    const g = id => document.getElementById(id);
+    const gv = id => g(id).value.trim();
+    const gn = id => parseFloat(g(id).value) || 0;
+
+    // ── Tab switching ─────────────────────────────────────
+    function switchTab(tab) {
+      currentTab = tab;
+      g('input-tab').style.display  = tab === 'input'   ? 'block' : 'none';
+      g('preview-tab').style.display = tab === 'preview' ? 'block' : 'none';
+      g('btn-tab-input').classList.toggle('active', tab === 'input');
+      g('btn-tab-preview').classList.toggle('active', tab === 'preview');
+      g('btn-print').style.display = tab === 'preview' ? 'inline-flex' : 'none';
+      if (tab === 'preview') renderPreview();
+    }
+
+    // ── Car list UI ───────────────────────────────────────
+    function renderCarList() {
+      const list = g('car-list');
+      list.innerHTML = '';
+      cars.forEach((car, i) => {
+        const row = document.createElement('div');
+        row.className = 'car-row';
+        row.innerHTML = `
+          <div class="car-badge">${LETTERS[i % 26]}</div>
+          <div class="f-model field">
+            <label>ชื่อรุ่น</label>
+            <div class="input-wrap"><input class="sm" type="text" value="${car.model}" oninput="updateCar(${car.id},'model',this.value)"></div>
+          </div>
+          <div class="f-price field">
+            <label>ราคา (บาท)</label>
+            <div class="input-wrap"><input class="sm" type="number" value="${car.price || ''}" oninput="updateCar(${car.id},'price',parseFloat(this.value)||0)"></div>
+          </div>
+          <button class="btn-remove" onclick="removeCar(${car.id})">✕</button>
+        `;
+        list.appendChild(row);
+      });
+      const validCnt = cars.filter(c => c.model && c.price > 0).length;
+      g('car-sec-title').textContent = `รุ่นรถยนต์${validCnt ? ' — ' + validCnt + ' รุ่น' : ''}`;
+    }
+
+    function addCar() {
+      cars.push({ id: nextId++, model: '', price: 0 });
+      render();
+    }
+    function removeCar(id) {
+      cars = cars.filter(c => c.id !== id);
+      render();
+    }
+    function updateCar(id, field, value) {
+      cars = cars.map(c => c.id === id ? { ...c, [field]: value } : c);
+      renderReady();
+      renderChips();
+    }
+
+    // ── Bulk paste ────────────────────────────────────────
+    let bulkParsed = [];
+
+    function toggleBulk() {
+      const panel = g('bulk-panel');
+      const btn   = g('btn-bulk');
+      const open  = panel.style.display === 'none';
+      panel.style.display = open ? 'block' : 'none';
+      btn.classList.toggle('active', open);
+      if (open) { g('bulk-input').value = ''; parseBulkPreview(); g('bulk-input').focus(); }
+    }
+
+    function parseLine(line) {
+      line = line.trim();
+      if (!line) return null;
+
+      let model, priceRaw;
+
+      if (line.includes('\t')) {
+        const parts = line.split('\t');
+        model    = parts[0].trim();
+        priceRaw = parts[parts.length - 1].trim();
+      }
+      else if (line.includes('|')) {
+        const parts = line.split('|');
+        model    = parts[0].trim();
+        priceRaw = parts[parts.length - 1].trim();
+      }
+      else {
+        const segs = line.split(',');
+        let priceIdx = -1;
+        for (let i = segs.length - 1; i >= 0; i--) {
+          const clean = segs[i].trim().replace(/[฿\s]/g,'');
+          if (/^\d+$/.test(clean) && parseInt(clean) > 10000) { priceIdx = i; break; }
+        }
+        if (priceIdx > 0) {
+          priceRaw = segs.slice(priceIdx).join(',').trim();
+          model    = segs.slice(0, priceIdx).join(',').trim();
+        } else {
+          const tokens = line.split(/\s+/);
+          const last   = tokens[tokens.length - 1].replace(/,/g,'');
+          if (/^\d+$/.test(last) && parseInt(last) > 10000) {
+            priceRaw = tokens[tokens.length - 1];
+            model    = tokens.slice(0, -1).join(' ').trim();
+          } else {
+            return { model: line, price: 0, err: true };
+          }
+        }
+      }
+
+      const price = parseInt(priceRaw.replace(/[,฿\s]/g, ''));
+      if (!model || isNaN(price) || price <= 0) return { model: line, price: 0, err: true };
+      return { model, price, err: false };
+    }
+
+    function parseBulkPreview() {
+      const raw = g('bulk-input').value;
+      const lines = raw.split('\n').filter(l => l.trim());
+      bulkParsed = lines.map(parseLine).filter(Boolean);
+
+      const validItems = bulkParsed.filter(x => !x.err);
+      const errItems   = bulkParsed.filter(x => x.err);
+
+      const previewWrap = g('bulk-preview-wrap');
+      const previewList = g('bulk-preview-list');
+      const errEl       = g('bulk-error');
+      const importBtn   = g('btn-import');
+      const replBtn     = g('btn-import-replace');
+
+      if (!bulkParsed.length) {
+        previewWrap.style.display = 'none';
+        errEl.style.display = 'none';
+        importBtn.disabled = replBtn.disabled = true;
+        g('import-count').textContent = '0';
+        return;
+      }
+
+      previewWrap.style.display = 'block';
+      previewList.innerHTML = bulkParsed.map((item, i) => `
+        <div class="bulk-preview-row ${item.err ? 'err' : ''}"
+             style="display:flex;align-items:center;gap:10px;background:var(--navy-pale);border:1.5px solid var(--navy-light);border-radius:7px;padding:6px 12px;font-size:13px;">
+          <div class="bpr-idx" style="width:22px;height:22px;border-radius:5px;background:var(--navy-mid);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            ${LETTERS[i % 26]}
+          </div>
+          <div class="bpr-model" style="flex:1;font-weight:500;color:${item.err ? '#a04040' : 'var(--text)'};">
+            ${item.err ? '⚠ ไม่สามารถอ่านได้: ' + item.model : item.model}
+          </div>
+          ${item.err ? '' : `<div class="bpr-price" style="font-weight:700;color:var(--navy);white-space:nowrap;">฿${fmt(item.price)}</div>`}
+        </div>
+      `).join('');
+
+      if (errItems.length) {
+        errEl.style.display = 'block';
+        errEl.textContent = `⚠ ${errItems.length} แถวอ่านไม่ได้ — ตรวจสอบรูปแบบข้อมูล`;
+      } else {
+        errEl.style.display = 'none';
+      }
+
+      importBtn.disabled = replBtn.disabled = validItems.length === 0;
+      g('import-count').textContent = validItems.length;
+    }
+
+    function importBulk(replace) {
+      const validItems = bulkParsed.filter(x => !x.err);
+      if (!validItems.length) return;
+
+      const newCars = validItems.map(item => ({ id: nextId++, model: item.model, price: item.price }));
+
+      if (replace) {
+        cars = newCars;
+      } else {
+        cars = [...cars, ...newCars];
+      }
+
+      g('bulk-panel').style.display = 'none';
+      g('btn-bulk').classList.remove('active');
+      g('bulk-input').value = '';
+      g('bulk-preview-wrap').style.display = 'none';
+      g('bulk-error').style.display = 'none';
+      g('btn-import').disabled = g('btn-import-replace').disabled = true;
+      g('import-count').textContent = '0';
+      bulkParsed = [];
+
+      render();
+    }
+
+    // ── Rate chips ─────────────────────────────────────────
+    function renderChips() {
+      const r36 = gn('rate36'), r48 = gn('rate48'), r60 = gn('rate60');
+      const sub = gn('subsidy'), tgt = gn('target');
+      g('rate-chips').innerHTML = `
+        <div class="chip"><span class="c-term">36m</span><span class="c-at">@</span><span class="c-rate">${r36}%</span><span class="c-label">FLAT</span></div>
+        <div class="chip"><span class="c-term">48m</span><span class="c-at">@</span><span class="c-rate">${r48}%</span><span class="c-label">FLAT</span></div>
+        <div class="chip"><span class="c-term">60m</span><span class="c-at">@</span><span class="c-rate">${r60}%</span><span class="c-label">FLAT</span></div>
+        <div class="chip gold" style="margin-left:auto"><span class="c-label">Subsidy</span><span class="c-rate">฿${fmt(sub)}</span></div>
+        <div class="chip gold"><span class="c-label">Target</span><span class="c-rate">฿${fmt(tgt)}</span></div>
+      `;
+    }
+
+    // ── Ready banner ───────────────────────────────────────
+    function renderReady() {
+      const valid = cars.filter(c => c.model && c.price > 0);
+      const banner = g('ready-banner');
+      if (!valid.length) { banner.style.display = 'none'; return; }
+      banner.style.display = 'block';
+      g('ready-title').textContent = `✅ พร้อมสร้าง Price List — ${valid.length} รุ่น`;
+      g('ready-models').innerHTML = valid.map(c =>
+        `<div class="model-chip"><strong>${c.model}</strong><span>฿${fmt(c.price)}</span></div>`
+      ).join('');
+    }
+
+    // ── Calculation ───────────────────────────────────────
+    function calcData() {
+      const sub = gn('subsidy'), tgt = gn('target');
+      const rates = { 36: gn('rate36') / 100, 48: gn('rate48') / 100, 60: gn('rate60') / 100 };
+      return cars.filter(c => c.model && c.price > 0).map(car => {
+        const adj = car.price - sub;
+        const rows = DEPOSITS.map(dp => {
+          const dAmt = Math.round(car.price * dp);
+          const fin  = adj - dAmt;
+          const row  = { dp, dAmt, fin };
+          TERMS.forEach(t => { row[t] = calcMonthly(fin, rates[t], t / 12); });
+          return row;
+        });
+        const goal = TERMS.map(t => ({ t, d: goalSeekDeposit(adj, tgt, rates[t], t / 12) }));
+        return { ...car, rows, goal };
+      });
+    }
+
+    // ── Preview render ─────────────────────────────────────
+    function renderPreview() {
+      const data = calcData();
+      const r36 = gn('rate36'), r48 = gn('rate48'), r60 = gn('rate60');
+      const tgt = gn('target');
+      const company   = gv('company');
+      const leaseType = gv('lease-type');
+      const dateRange = gv('date-range');
+
+      g('doc-header').innerHTML = `
+        <div>
+          <div class="doc-title-label">ใบเสนอราคา · Financial Lease</div>
+          <div class="doc-company">${company}</div>
+          <div class="doc-sub">บริการลีสซิ่งรถยนต์ · ${leaseType}</div>
+        </div>
+        <div>
+          <div class="doc-date-label">ราคาตั้งแต่วันที่</div>
+          <div class="doc-date">${dateRange}</div>
+          <div class="doc-terms">
+            <span class="term-pill">36m @ ${r36}%</span>
+            <span class="term-pill">48m @ ${r48}%</span>
+            <span class="term-pill">60m @ ${r60}%</span>
+          </div>
+        </div>
+      `;
+
+      if (!data.length) {
+        g('price-table-wrap').innerHTML = '<div style="padding:48px;text-align:center;color:var(--text-muted)">ไม่มีข้อมูลรถ</div>';
+        return;
+      }
+
+      // ── เปลี่ยนหัวตาราง: ตัด "List Price" ออก และย้ายราคาไปหัวแถวรุ่น (brand-row)
+      let html = `
+        <table class="price-table">
+          <colgroup>
+            <col class="c-model"><col class="c-dpct"><col class="c-damt">
+            <col class="c-fin"><col class="c-36"><col class="c-48"><col class="c-60">
+          </colgroup>
+          <thead>
+            <tr class="hd-main">
+              <th class="left">MODEL</th>
+              <th>DOWN %</th><th>DOWN AMT</th><th>FINANCE AMT</th>
+              <th class="col-36">36 เดือน</th>
+              <th class="col-48">48 เดือน</th>
+              <th class="col-60">60 เดือน</th>
+            </tr>
+            <tr class="hd-rate">
+              <td colspan="4">อัตราดอกเบี้ยคงที่ (Flat Rate) · ราคารวม VAT 7%</td>
+              <td class="rate-val rate-36">${r36}%</td>
+              <td class="rate-val rate-48">${r48}%</td>
+              <td class="rate-val rate-60">${r60}%</td>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      data.forEach((car, ci) => {
+        const borderClass = ci > 0 ? 'has-border' : '';
+        // หัวรุ่น: ใส่ชื่อรุ่น + ราคา (ชิดขวา) ในแถวเดียว
+        html += `
+          <tr class="brand-row ${borderClass}">
+            <td colspan="7">
+              <div class="brand-hdr">
+                <span class="model">${car.model}</span>
+                <span class="price">฿${fmt(car.price)}</span>
+              </div>
+            </td>
+          </tr>
+        `;
+
+        // แถวรายละเอียดเงินดาวน์/ค่างวด
+        car.rows.forEach((row, ri) => {
+          html += `
+            <tr class="dp-row">
+              ${ri === 0 ? '<td rowspan="' + DEPOSITS.length + '"></td>' : ''} <!-- ช่อง MODEL (ว่าง) -->
+              <td class="dp-pct">${fmtPct(row.dp)}</td>
+              <td>${fmt(row.dAmt)}</td>
+              <td>${fmt(row.fin)}</td>
+              <td class="monthly m36">${fmt(row[36])}</td>
+              <td class="monthly m48">${fmt(row[48])}</td>
+              <td class="monthly m60">${fmt(row[60])}</td>
+            </tr>
+          `;
+        });
+
+        // Goal seek สำหรับ target monthly
+        const g36 = car.goal.find(x => x.t === 36);
+        const g48 = car.goal.find(x => x.t === 48);
+        const g60 = car.goal.find(x => x.t === 60);
+        const gCell = (gg) => gg && gg.d > 0
+          ? `<td class="g-val">${fmt(gg.d)}</td>`
+          : `<td class="g-val g-dash">–</td>`;
+        html += `
+          <tr class="goal-row">
+            <td colspan="4">📌 เงินดาวน์สำหรับค่างวด ${fmt(tgt)} บาท/เดือน</td>
+            ${gCell(g36)}${gCell(g48)}${gCell(g60)}
+          </tr>
+        `;
+      });
+
+      html += `
+          </tbody>
+        </table>
+        <div class="tbl-footer">
+          <div class="vat-note">ราคารวมภาษีมูลค่าเพิ่ม 7%</div>
+          <div class="cond-title">เงื่อนไขเพิ่มเติม</div>
+          <div class="cond-item">- ราคาดังกล่าวเป็นราคาเช่า-เพื่อซื้อรถยนต์ ภายใต้สัญญาเช่าการเงิน (Financial Lease)</div>
+          <div class="cond-item">- สัญญาแบบ Financial Lease ค่างวดหักค่าใช้จ่ายบริษัทได้สูงสุด ${fmt(tgt)} บาท</div>
+          <div class="cond-item">- ใช้อัตราดอกเบี้ยคงที่ (Flat Rate) ในการคำนวณสำหรับทุกช่วงเงินดาวน์และระยะเวลาผ่อน</div>
+          <div class="cond-item">- เกณฑ์การพิจารณาสินเชื่อและเงื่อนไขเป็นไปตามนโยบายของบริษัทฯ ขอสงวนสิทธิ์ในการแก้ไขเปลี่ยนแปลงเงื่อนไข</div>
+          <div class="cond-item">- กรุณาติดต่อเจ้าหน้าที่ บจก.ไทยโอริกซ์ลีสซิ่ง สำหรับใบเสนอราคาอีกครั้ง</div>
+        </div>
+      `;
+      g('price-table-wrap').innerHTML = html;
+    }
+
+    // ── Full render ───────────────────────────────────────
+    function render() {
+      renderCarList();
+      renderChips();
+      renderReady();
+      if (currentTab === 'preview') renderPreview();
+    }
+  </script>
+
+  <!-- █████ Script 2: ย่อให้พอดี A4 หน้าเดียว & ชดเชยความกว้าง █████ -->
+  <script>
+    function pxPerMm() {
+      const probe = document.createElement('div');
+      probe.style.width = '100mm';
+      probe.style.height = '0';
+      probe.style.position = 'absolute';
+      probe.style.visibility = 'hidden';
+      document.body.appendChild(probe);
+      const px = probe.getBoundingClientRect().width / 100;
+      probe.remove();
+      return px || 3.78; // fallback ~96dpi
+    }
+
+    /* ล็อกความกว้างเต็ม 190mm → ชดเชยความกว้างก่อนย่อเฉพาะความสูง ให้เต็มหน้ากระดาษเสมอ */
+    function scaleToSingleA4() {
+      try {
+        const area = document.getElementById('print-area');
+        if (!area) return;
+
+        if (typeof currentTab !== 'undefined' && currentTab !== 'preview') {
+          switchTab('preview');
+        }
+
+        const p = pxPerMm();
+        const availW = p * (210 - 20); // 190mm
+        const availH = p * (297 - 20); // 277mm
+
+        // รีเซ็ตก่อนวัด
+        area.style.transform = 'none';
+        area.style.width = '';
+        area.style.height = '';
+
+        // Pass #1: ล็อกกว้างเต็มพื้นที่พิมพ์ แล้ววัดความสูงจริง
+        area.style.width = availW + 'px';
+        void area.offsetHeight;
+        let naturalH = Math.max(area.scrollHeight, area.offsetHeight);
+
+        // คำนวณสเกลจากความสูง
+        let scale = Math.min(availH / naturalH, 1);
+
+        if (scale < 1) {
+          // Pass #2: ชดเชยความกว้าง เพื่อให้ผลลัพธ์สุดท้ายกว้างเท่าพื้นที่พิมพ์
+          area.style.width = (availW / scale) + 'px';
+          void area.offsetHeight;
+          naturalH = Math.max(area.scrollHeight, area.offsetHeight);
+
+          // คำนวณใหม่หลังชดเชย (layout อาจเปลี่ยน)
+          const scale2 = Math.min(availH / naturalH, 1);
+
+          if (Math.abs(scale2 - scale) > 0.01) {
+            scale = scale2;
+            area.style.width = (availW / scale) + 'px';
+            void area.offsetHeight;
+            naturalH = Math.max(area.scrollHeight, area.offsetHeight);
+          } else {
+            scale = scale2;
+          }
+        }
+
+        // ใส่สเกลสุดท้าย
+        area.style.transformOrigin = 'top left';
+        area.style.transform = `scale(${scale})`;
+
+        // ล็อกความสูงจริงก่อนย่อ เพื่อกันถูกตัด
+        area.style.height = naturalH + 'px';
+      } catch (e) {
+        console.warn('scaleToSingleA4 error:', e);
+      }
+    }
+
+    function resetScaleAfterPrint() {
+      const area = document.getElementById('print-area');
+      if (!area) return;
+      area.style.transform = 'none';
+      area.style.width = '';
+      area.style.height = '';
+    }
+
+    function printSinglePage() {
+      if (typeof switchTab === 'function') switchTab('preview');
+      setTimeout(() => {
+        scaleToSingleA4();
+        requestAnimationFrame(() => window.print());
+      }, 0);
+    }
+
+    window.addEventListener('beforeprint', scaleToSingleA4);
+    window.addEventListener('afterprint', resetScaleAfterPrint);
+
+    const mql = window.matchMedia && window.matchMedia('print');
+    if (mql) {
+      const onChange = e => { if (e.matches) scaleToSingleA4(); else resetScaleAfterPrint(); };
+      if (mql.addEventListener) mql.addEventListener('change', onChange);
+      else if (mql.addListener) mql.addListener(onChange);
+    }
+
+    // ── Init ──────────────────────────────────────────────
+    render();
+    switchTab('input');
+  </script>
+
+</body>
+</html>
