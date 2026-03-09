@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>Car Pricing Tool</title>
+
+<style>
+body{
+font-family:Arial,Helvetica,sans-serif;
+margin:20px;
+background:#f5f5f5;
+}
+
+h1{
+margin-bottom:10px;
+}
+
+.container{
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
+button{
+padding:8px 14px;
+margin:4px;
+border:none;
+border-radius:6px;
+background:#007bff;
+color:white;
+cursor:pointer;
+}
+
+button.secondary{
+background:#666;
+}
+
+button:disabled{
+background:#aaa;
+}
+
+input{
+padding:6px;
+margin:4px;
+}
+
+table{
+border-collapse:collapse;
+width:100%;
+margin-top:10px;
+}
+
+th,td{
+border:1px solid #ddd;
+padding:8px;
+text-align:left;
+}
+
+th{
+background:#eee;
+}
+
+.bulk-panel{
+margin-top:20px;
+padding:10px;
+border:1px dashed #ccc;
+display:none;
+}
+
+textarea{
+width:100%;
+height:120px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🚗 Car Pricing Tool</h1>
+
+<h3>Add Car</h3>
+
+<input id="model" placeholder="Model name">
+<input id="price" placeholder="Price" type="number">
+
+<button onclick="addCar()">Add</button>
+
+<button onclick="toggleBulk()">Bulk Import</button>
+
+<table id="car-table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Model</th>
+<th>Price</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<div class="bulk-panel" id="bulk-panel">
+
+<h3>Bulk Import</h3>
+
+<p>Format: Model,Price</p>
+
+<textarea id="bulk-input"></textarea>
+
+<br>
+
+<button id="btn-parse" onclick="parseBulk()">Preview</button>
+<button id="btn-import" onclick="importBulk(false)" disabled>Add</button>
+<button id="btn-import-replace" onclick="importBulk(true)" disabled>Replace</button>
+
+<p id="bulk-error" style="color:red;display:none"></p>
+
+<table id="bulk-preview">
+<thead>
+<tr>
+<th>Model</th>
+<th>Price</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+</div>
+
+</div>
+
+<script>
+
+let cars=[]
+let nextId=1
+let bulkParsed=[]
+
+function g(id){
+return document.getElementById(id)
+}
+
+function addCar(){
+
+const model=g("model").value.trim()
+const price=parseFloat(g("price").value)
+
+if(!model||isNaN(price)){
+alert("Invalid input")
+return
+}
+
+cars.push({
+id:nextId++,
+model:model,
+price:price
+})
+
+g("model").value=""
+g("price").value=""
+
+render()
+}
+
+function removeCar(id){
+cars=cars.filter(c=>c.id!==id)
+render()
+}
+
+function render(){
+
+const tbody=g("car-table").querySelector("tbody")
+
+tbody.innerHTML=""
+
+cars.forEach(car=>{
+
+const tr=document.createElement("tr")
+
+tr.innerHTML=`
+<td>${car.id}</td>
+<td>${car.model}</td>
+<td>${car.price.toLocaleString()}</td>
+<td>
+<button class="secondary" onclick="removeCar(${car.id})">Delete</button>
+</td>
+`
+
+tbody.appendChild(tr)
+
+})
+
+}
+
+function toggleBulk(){
+
+const panel=g("bulk-panel")
+
+panel.style.display=
+panel.style.display==="none"?"block":"none"
+
+}
+
+function parseBulk(){
+
+const text=g("bulk-input").value.trim()
+
+if(!text){
+return
+}
+
+const lines=text.split("\n")
+
+bulkParsed=[]
+
+lines.forEach(line=>{
+
+const parts=line.split(",")
+
+if(parts.length!==2){
+
+bulkParsed.push({
+model:"",
+price:0,
+err:"Format error"
+})
+
+return
+}
+
+const model=parts[0].trim()
+const price=parseFloat(parts[1])
+
+if(!model||isNaN(price)){
+
+bulkParsed.push({
+model:model,
+price:price,
+err:"Invalid data"
+})
+
+return
+}
+
+bulkParsed.push({
+model:model,
+price:price,
+err:null
+})
+
+})
+
+renderBulkPreview()
+
+}
+
+function renderBulkPreview(){
+
+const tbody=g("bulk-preview").querySelector("tbody")
+
+tbody.innerHTML=""
+
+let valid=0
+
+bulkParsed.forEach(row=>{
+
+const tr=document.createElement("tr")
+
+let status="OK"
+
+if(row.err){
+status=row.err
+}else{
+valid++
+}
+
+tr.innerHTML=`
+<td>${row.model}</td>
+<td>${row.price||""}</td>
+<td>${status}</td>
+`
+
+tbody.appendChild(tr)
+
+})
+
+g("btn-import").disabled=valid===0
+g("btn-import-replace").disabled=valid===0
+
+}
+
+function importBulk(replace){
+
+const valid=bulkParsed.filter(x=>!x.err)
+
+if(!valid.length)return
+
+const newCars=valid.map(item=>({
+
+id:nextId++,
+model:item.model,
+price:item.price
+
+}))
+
+cars=replace?newCars:[...cars,...newCars]
+
+g("bulk-panel").style.display="none"
+
+g("bulk-input").value=""
+
+g("btn-import").disabled=true
+g("btn-import-replace").disabled=true
+
+bulkParsed=[]
+
+render()
+
+}
+
+render()
+
+</script>
+
+</body>
+</html>
