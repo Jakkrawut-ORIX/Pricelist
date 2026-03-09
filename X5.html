@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thai Orix — Price List Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:#003082;--navy-dark:#001d56;--navy-mid:#1a4faf;--navy-light:#e8eef8;--navy-pale:#f2f5fc;
+      --blue:#2a72d8;--gray-100:#f5f6f9;--gray-200:#eaecf2;--gray-300:#d4d9e8;--gray-400:#b0bad0;
+      --gray-500:#8090b0;--gray-700:#4a5570;--white:#ffffff;--text:#1e2440;--text-sub:#4a5570;
+      --text-muted:#8090b0;--gold:#b07800;--gold-light:#fdf8ed;--teal:#0a7080;--teal-light:#e6f4f6;
+    }
+    body{font-family:'Sarabun','IBM Plex Sans Thai',sans-serif;font-size:14px;background:var(--gray-100);color:var(--text);line-height:1.5;}
+    .topbar{background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 16px rgba(0,30,96,.3);position:sticky;top:0;z-index:100;}
+    .brand{display:flex;align-items:center;gap:12px;}
+    .brand-icon{width:36px;height:36px;border-radius:8px;background:var(--navy-mid);border:1.5px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:#fff;}
+    .brand-name{font-size:15px;font-weight:700;color:#fff;}
+    .brand-sub{font-size:10px;color:rgba(255,255,255,.45);letter-spacing:.12em;text-transform:uppercase;margin-top:1px;}
+    .tabs{display:flex;background:rgba(255,255,255,.1);border-radius:9px;padding:3px;gap:2px;}
+    .tab-btn{padding:7px 20px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;color:rgba(255,255,255,.55);background:transparent;transition:all .16s;}
+    .tab-btn.active{background:#fff;color:var(--navy);}
+    .nav-right{display:flex;align-items:center;gap:8px;}
+    .btn-topbar{padding:8px 16px;border:1.5px solid rgba(255,255,255,.25);border-radius:8px;color:#fff;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;transition:background .15s;display:none;align-items:center;gap:6px;}
+    .btn-print{background:var(--navy-mid);}.btn-print:hover{background:var(--blue);}
+    .btn-excel{background:#1a7840;}.btn-excel:hover{background:#26a05a;}
+    .wrap{max-width:1200px;margin:0 auto;padding:24px;}
+    .sec-title{font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+    .sec-title::before{content:'';display:inline-block;width:3px;height:13px;background:var(--navy-mid);border-radius:2px;}
+    .card{background:var(--white);border:1.5px solid var(--gray-300);border-radius:12px;padding:16px 18px;margin-bottom:16px;box-shadow:0 1px 8px rgba(0,48,130,.05);}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;}
+    .col-span-2{grid-column:1 / -1;}
+    .field{display:flex;flex-direction:column;gap:4px;}
+    .field label{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;}
+    .input-wrap{display:flex;align-items:center;background:var(--white);border:1.5px solid var(--gray-300);border-radius:8px;overflow:hidden;transition:border-color .14s;}
+    .input-wrap:focus-within{border-color:var(--navy);}
+    .input-wrap .pfx,.input-wrap .sfx{padding:0 10px;font-size:13px;color:var(--navy-mid);background:var(--navy-pale);border-right:1.5px solid var(--gray-300);white-space:nowrap;align-self:stretch;display:flex;align-items:center;}
+    .input-wrap .sfx{border-right:none;border-left:1.5px solid var(--gray-300);}
+    .input-wrap input{flex:1;border:none;outline:none;background:transparent;color:var(--text);padding:8px 12px;font-size:14px;font-family:inherit;}
+    .input-wrap input.sm{padding:7px 10px;font-size:13px;}
+    #car-list{display:flex;flex-direction:column;gap:7px;margin-bottom:10px;}
+    .car-row{background:var(--white);border:1.5px solid var(--gray-300);border-radius:10px;padding:9px 13px;display:flex;align-items:flex-end;gap:10px;}
+    .car-badge{width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,var(--navy),var(--navy-mid));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;align-self:center;}
+    .car-row .f-model{flex:1;}.car-row .f-price{width:170px;}
+    .btn-remove{background:var(--gray-100);border:1.5px solid var(--gray-300);border-radius:7px;color:var(--gray-500);cursor:pointer;padding:6px 11px;font-size:14px;flex-shrink:0;line-height:1;font-family:inherit;transition:all .14s;}
+    .btn-remove:hover{background:var(--gray-200);color:var(--gray-700);}
+    .btn-add{width:100%;padding:10px;background:transparent;border:2px dashed var(--gray-400);border-radius:10px;color:var(--navy-mid);cursor:pointer;font-size:13px;font-family:inherit;font-weight:600;transition:all .16s;}
+    .btn-add:hover{border-color:var(--navy);color:var(--navy);background:var(--navy-pale);}
+    .rate-chips{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;}
+    .chip{display:flex;align-items:center;gap:5px;background:var(--navy-light);border:1.5px solid rgba(0,48,130,.12);border-radius:7px;padding:4px 11px;}
+    .chip .c-term{font-weight:700;font-size:13px;color:var(--navy);}.chip .c-at{font-size:10px;color:var(--text-muted);}
+    .chip .c-rate{font-weight:700;font-size:13px;color:var(--navy);}.chip .c-label{font-size:10px;color:var(--text-muted);}
+    .chip.gold{background:var(--gold-light);border-color:rgba(176,120,0,.2);}
+    .chip.gold .c-rate{color:var(--gold);}.chip.gold .c-label{color:#a06000;}
+    .chip.goal-chip{background:#fdf8ed;border-color:rgba(176,120,0,.3);}
+    .chip.goal-chip .c-label{color:#a06000;font-weight:700;}.chip.goal-chip .c-rate{color:#8a5e00;font-weight:800;}
+    .ready-banner{background:var(--navy-pale);border:1.5px solid rgba(0,48,130,.15);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+    .ready-models{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+    .model-chip{background:var(--white);border:1.5px solid var(--gray-300);border-radius:6px;padding:3px 10px;font-size:12px;}
+    .model-chip strong{color:var(--navy);}.model-chip span{color:var(--text-muted);margin-left:5px;}
+    .btn-preview{padding:9px 24px;background:var(--navy);border:none;border-radius:9px;color:#fff;cursor:pointer;font-size:14px;font-weight:700;font-family:inherit;white-space:nowrap;box-shadow:0 2px 10px rgba(0,48,130,.25);transition:background .15s;}
+    .btn-preview:hover{background:var(--navy-mid);}
+    #preview-tab{display:none;}
+    .doc-header{background:var(--white);border:1.5px solid var(--gray-300);border-top:4px solid var(--navy);border-radius:12px;padding:14px 20px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;box-shadow:0 1px 8px rgba(0,48,130,.06);}
+    .doc-title-label{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.14em;margin-bottom:3px;}
+    .doc-company{font-size:20px;font-weight:700;color:var(--navy);}
+    .doc-sub{font-size:13px;color:var(--text-sub);margin-top:2px;}
+    .doc-date-label{font-size:10px;color:var(--text-muted);margin-bottom:3px;text-align:right;}
+    .doc-date{font-size:13px;font-weight:600;color:var(--text);text-align:right;}
+    .table-card{background:var(--white);border:1.5px solid var(--gray-300);border-radius:12px;overflow:hidden;box-shadow:0 1px 8px rgba(0,48,130,.06);}
+    table.price-table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;}
+    table.price-table thead tr.hd-main th{background:var(--navy);padding:6px 8px;font-size:9px;font-weight:700;color:rgba(255,255,255,.65);text-align:center;white-space:normal;line-height:1.2;word-break:break-word;}
+    table.price-table thead tr.hd-main th.left{text-align:left;}
+    table.price-table thead tr.hd-main th.col-down{background:#002060;}
+    table.price-table thead tr.hd-main th.col-amt{background:#1040a0;}
+    table.price-table thead tr.hd-main th.col-pmt{background:#2a5ec8;}
+    table.price-table thead tr.hd-rate td{background:var(--gray-200);padding:3px 6px;font-size:9px;color:var(--text-muted);border-bottom:2px solid var(--gray-300);}
+    table.price-table thead tr.hd-rate td.rate-val{text-align:center;font-weight:800;}
+    table.price-table tr.brand-row td{background:linear-gradient(90deg,var(--navy-light),var(--gray-100));padding:4px 6px;font-weight:700;font-size:10px;color:var(--navy);border-bottom:1px solid var(--gray-300);word-break:break-word;}
+    table.price-table tr.dp-row td{padding:3px 5px;text-align:right;border-bottom:1px solid var(--gray-200);color:var(--text-sub);font-size:10px;line-height:1;}
+    table.price-table tr.dp-row:nth-child(even){background:var(--gray-100);}
+    table.price-table tr.dp-row td.price-col{font-weight:700;color:var(--text);border-right:1px solid var(--gray-200);}
+    table.price-table tr.dp-row td.monthly{font-weight:700;color:var(--navy-mid);border-left:1px solid var(--gray-200);}
+    table.price-table tr.goal-row td{padding:3px 5px;border-bottom:2px solid var(--gray-300);font-size:9px;color:var(--gold);font-style:italic;font-weight:600;background:var(--gold-light);border-top:1px dashed var(--gray-400);}
+    table.price-table tr.goal-row td.g-val{text-align:right;border-left:1px solid var(--gray-300);font-style:normal;font-weight:700;}
+    .tbl-footer{background:var(--gray-100);border-top:2px solid var(--gray-300);padding:8px 12px;}
+    .tbl-footer .vat-note{font-weight:700;color:var(--navy);font-size:10px;margin-bottom:3px;}
+    .tbl-footer .cond-list{font-size:8px;color:var(--text-sub);line-height:1.4;}
+    .doc-logo{height:28px;width:auto;object-fit:contain;}
+    .car-sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+    .bulk-panel{background:var(--white);border:1.5px solid var(--navy-light);border-radius:12px;padding:14px 16px;margin-bottom:12px;display:none;}
+    .bulk-panel.show{display:block;}
+    .bulk-hint{font-size:12px;color:var(--text-muted);margin-bottom:9px;line-height:1.8;}
+    .bulk-hint code{background:var(--gray-200);padding:1px 6px;border-radius:4px;font-family:monospace;font-size:11px;color:var(--navy-mid);}
+    #bulk-input{width:100%;min-height:110px;padding:10px 12px;background:var(--gray-100);border:1.5px solid var(--gray-300);border-radius:8px;font-family:monospace;font-size:13px;color:var(--text);resize:vertical;outline:none;line-height:1.7;}
+    #bulk-input:focus{border-color:var(--navy);background:var(--white);}
+    .bulk-preview-label{font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;margin:10px 0 5px;}
+    .bulk-preview-list{display:flex;flex-direction:column;gap:3px;max-height:170px;overflow-y:auto;}
+    .bulk-preview-row{display:flex;align-items:center;gap:9px;background:var(--navy-pale);border:1.5px solid var(--navy-light);border-radius:7px;padding:5px 11px;font-size:12px;}
+    .bulk-preview-row .bpr-idx{width:18px;height:18px;border-radius:5px;background:var(--navy-mid);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .bulk-actions{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap;}
+    .btn-import{padding:7px 17px;background:var(--navy);border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;transition:background .14s;}
+    .btn-import:hover{background:var(--navy-mid);}.btn-import:disabled{background:var(--gray-400);cursor:not-allowed;}
+    .btn-small{padding:6px 12px;border-radius:6px;border:1.5px solid var(--gray-300);background:var(--white);color:var(--text-sub);cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;transition:all .15s;}
+    .btn-small:hover{border-color:var(--navy);color:var(--navy);}
+    .btn-small.primary{background:var(--navy);border-color:var(--navy);color:#fff;}
+
+    /* ═══ TEMPLATE & CONTROLS ═══ */
+    .control-bar{background:var(--white);border:1px solid var(--gray-300);border-radius:8px;padding:12px;margin-bottom:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+    .control-group{display:flex;gap:8px;align-items:center;}
+    .control-label{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;}
+    .template-section{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+
+    /* ═══ DOWN STEPS ═══ */
+    .down-steps-bar{display:flex;gap:4px;flex-wrap:wrap;align-items:center;}
+    .btn-down-step{padding:5px 10px;border-radius:5px;border:1.5px solid var(--gray-300);background:var(--white);color:var(--text-sub);cursor:pointer;font-size:11px;font-weight:600;font-family:inherit;transition:all .12s;}
+    .btn-down-step.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+    .btn-down-step:hover{border-color:var(--navy);color:var(--navy);}
+
+    /* ═══ A4 PREVIEW ═══ */
+    .preview-outer{display:none;overflow:auto;background:#999;padding:16px;border-radius:8px;margin-bottom:16px;max-height:70vh;}
+    .preview-outer.show{display:block;}
+    .a4-paper{background:#fff;width:210mm;height:297mm;margin:0 auto;box-shadow:0 4px 20px rgba(0,0,0,.3);position:relative;padding:10mm;}
+    .a4-paper .print-area{font-size:11px;}
+    .preview-controls{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
+    .zoom-slider{width:150px;}
+
+    @media print {
+      html,body{background:#fff;height:auto;}
+      .topbar,#input-tab,.control-bar,.preview-controls,.preview-outer{display:none !important;}
+      .wrap{padding:0;max-width:unset;}
+      body.printing #preview-tab{display:block !important;}
+      #print-area{overflow:visible !important;transform-origin:top left;}
+      .table-card{border:none;border-radius:0;box-shadow:none;}
+      table.price-table{font-size:10px;}
+      .doc-header{border:none;border-top:2px solid var(--navy);border-radius:0;padding:2px 0 3px;box-shadow:none;margin-bottom:3px;}
+      .doc-company{font-size:10px;}
+      .tbl-footer{padding:5px 0;}
+      .tbl-footer .vat-note{font-size:9px;margin-bottom:2px;}
+      .tbl-footer .cond-list{font-size:7px;}
+      tr{page-break-inside:avoid;}
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon">TO</div>
+    <div>
+      <div class="brand-name">Thai Orix Leasing</div>
+      <div class="brand-sub">Price List Generator v2</div>
+    </div>
+  </div>
+  <div class="nav-right">
+    <div class="tabs">
+      <button class="tab-btn active" id="btn-tab-input" onclick="switchTab('input')">⚙ ตั้งค่า</button>
+      <button class="tab-btn" id="btn-tab-preview" onclick="switchTab('preview')">📋 Price List</button>
+    </div>
+    <button class="btn-topbar btn-excel" id="btn-excel" onclick="exportExcel()">📥 Excel</button>
+    <button class="btn-topbar btn-print" id="btn-print" onclick="printPage()">🖨 Print</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <div id="input-tab">
+    <!-- TEMPLATE SAVE/LOAD -->
+    <div class="control-bar">
+      <div class="control-group">
+        <span class="control-label">💾 Template:</span>
+        <input type="text" id="template-name" placeholder="ชื่อ template" style="padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:12px;width:140px;">
+        <button class="btn-small primary" onclick="saveTemplate()">บันทึก</button>
+        <select id="template-list" onchange="loadTemplate()" style="padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:12px;">
+          <option value="">-- เลือก Template --</option>
+        </select>
+        <button class="btn-small" onclick="deleteTemplate()">ลบ</button>
+      </div>
+    </div>
+
+    <div class="sec-title">ข้อมูลบริษัทและเอกสาร</div>
+    <div class="card">
+      <div class="grid-2">
+        <div class="field"><label>ชื่อบริษัท</label><div class="input-wrap"><input type="text" id="company" value="บริษัท ไทยโอริกซ์ลีสซิ่ง จำกัด" oninput="updateTemplateDropdown()"></div></div>
+        <div class="field"><label>ประเภทสัญญา</label><div class="input-wrap"><input type="text" id="lease-type" value="Financial Lease" oninput="updateTemplateDropdown()"></div></div>
+        <div class="field col-span-2"><label>ช่วงระยะเวลาราคา</label><div class="input-wrap"><input type="text" id="date-range" value="1 กุมภาพันธ์ ถึง 31 มีนาคม 2569" oninput="updateTemplateDropdown()"></div></div>
+      </div>
+    </div>
+
+    <div class="sec-title">อัตราดอกเบี้ย &amp; เงื่อนไขการเงิน</div>
+    <div class="card">
+      <div class="grid-4">
+        <div class="field"><label>อัตรา 36 เดือน</label><div class="input-wrap"><input type="number" id="rate36" value="2.79" step="0.01" oninput="render()"><span class="sfx">%</span></div></div>
+        <div class="field"><label>อัตรา 48 เดือน</label><div class="input-wrap"><input type="number" id="rate48" value="2.79" step="0.01" oninput="render()"><span class="sfx">%</span></div></div>
+        <div class="field"><label>อัตรา 60 เดือน</label><div class="input-wrap"><input type="number" id="rate60" value="2.79" step="0.01" oninput="render()"><span class="sfx">%</span></div></div>
+        <div class="field"><label>Commission Rate</label><div class="input-wrap"><input type="number" id="com-rate" value="8" step="0.1" oninput="render()"><span class="sfx">%</span></div></div>
+        <div class="field"><label>Subsidy (บาท)</label><div class="input-wrap"><span class="pfx">฿</span><input type="number" id="subsidy" value="20000" oninput="render()"></div></div>
+        <div class="field"><label>Incentive (บาท)</label><div class="input-wrap"><span class="pfx">฿</span><input type="number" id="incentive" value="5000" oninput="render()"></div></div>
+        <div class="field col-span-2">
+          <label>Target Monthly (In VAT, บาท)</label>
+          <div class="input-wrap"><span class="pfx">฿</span><input type="number" id="target" value="36000" oninput="render()"></div>
+        </div>
+      </div>
+      <div class="rate-chips" id="rate-chips"></div>
+    </div>
+
+    <div class="car-sec-header">
+      <div class="sec-title" id="car-sec-title" style="margin-bottom:0">รุ่นรถยนต์</div>
+      <button class="btn-small primary" id="btn-bulk" onclick="toggleBulk()">📋 Bulk Import</button>
+    </div>
+
+    <div id="bulk-panel" class="bulk-panel">
+      <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">วางข้อมูลรถเป็นชุด</div>
+      <div class="bulk-hint">• Copy จาก Excel (Tab): <code>ชื่อรุ่น [Tab] ราคา</code> • CSV: <code>ชื่อรุ่น, ราคา</code></div>
+      <textarea id="bulk-input" placeholder="Haval Jolion HEV SPORT	709000&#10;Haval H6 HEV PRO	899000" oninput="parseBulkPreview()"></textarea>
+      <div id="bulk-preview-wrap" style="display:none;">
+        <div class="bulk-preview-label">Preview:</div>
+        <div class="bulk-preview-list" id="bulk-preview-list"></div>
+      </div>
+      <div class="bulk-actions">
+        <button class="btn-import" id="btn-import" onclick="importBulk(false)" disabled>+ เพิ่ม</button>
+        <button class="btn-import" id="btn-import-replace" onclick="importBulk(true)" disabled style="background:#8b5a00;">แทนที่</button>
+      </div>
+    </div>
+
+    <div id="car-list"></div>
+    <button class="btn-add" onclick="addCar()">+ เพิ่มรุ่นรถ</button>
+
+    <div id="ready-banner" style="margin-top:16px;display:none;">
+      <div class="ready-banner">
+        <div>
+          <div style="font-weight:700;color:var(--navy);font-size:14px;" id="ready-title"></div>
+          <div class="ready-models" id="ready-models"></div>
+        </div>
+        <button class="btn-preview" onclick="switchTab('preview')">ดู Price List →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="preview-tab">
+    <!-- DOWN STEPS CONTROL -->
+    <div class="control-bar">
+      <span class="control-label">📊 Down Payment Steps:</span>
+      <div class="down-steps-bar" id="down-steps-control"></div>
+    </div>
+
+    <!-- A4 PREVIEW CONTROL -->
+    <div class="preview-controls">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+        <input type="checkbox" id="chk-a4-preview" onchange="toggleA4Preview(this.checked)">
+        <span>🔍 A4 Preview</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+        <span>Zoom:</span>
+        <input type="range" id="zoom-slider" min="50" max="200" value="100" step="10" onchange="updateZoom()" class="zoom-slider">
+        <span id="zoom-display">100%</span>
+      </label>
+    </div>
+
+    <!-- A4 PREVIEW PANEL -->
+    <div class="preview-outer" id="a4-preview-outer">
+      <div class="a4-paper" id="a4-paper">
+        <div id="print-area-clone" class="print-area"></div>
+      </div>
+    </div>
+
+    <!-- ACTUAL PRINT AREA -->
+    <div id="print-area">
+      <div class="doc-header" id="doc-header"></div>
+      <div class="table-card"><div id="price-table-wrap"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const LETTERS='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const ALL_DOWN_STEPS=[0,0.05,0.10,0.15,0.20,0.25,0.30];
+const TERMS=[36,48,60];
+let cars=[
+  {id:1,model:'BZ4X Long Range FWD',price:1529000},
+  {id:2,model:'BZ4X Long Range AWD',price:1649000},
+  {id:3,model:'Hilux TRAVO-e',price:1491000},
+];
+let nextId=4,currentTab='input';
+let activeDownSteps=new Set([0,0.10,0.15,0.20,0.30]);
+let currentZoom=100;
+
+const fmt=n=>Math.round(n).toLocaleString('th-TH');
+const g=id=>document.getElementById(id);
+const gv=id=>g(id).value.trim();
+const gn=id=>parseFloat(g(id).value)||0;
+const ceilSafe=v=>Math.ceil(v-1e-7);
+const calcMonthly=(finance,flatRate,years)=>finance<=0?0:ceilSafe(finance*(1+flatRate*years)/(years*12));
+const goalSeekDownPL=(adjPrice,targetInVAT,flatRate,years)=>{const finance=targetInVAT*years*12/(1+flatRate*years);return Math.max(0,Math.round(adjPrice-finance));};
+
+// ★ TEMPLATE SAVE/LOAD
+function saveTemplate(){
+  const name=g('template-name').value;
+  if(!name){alert('ชื่อ template?');return;}
+  const data={company:gv('company'),leaseType:gv('lease-type'),dateRange:gv('date-range'),rate36:gn('rate36'),rate48:gn('rate48'),rate60:gn('rate60'),comRate:gn('com-rate'),subsidy:gn('subsidy'),incentive:gn('incentive'),target:gn('target')};
+  let templates=JSON.parse(localStorage.getItem('orix_templates')||'{}');
+  templates[name]=data;
+  localStorage.setItem('orix_templates',JSON.stringify(templates));
+  g('template-name').value='';
+  updateTemplateDropdown();
+}
+
+function loadTemplate(){
+  const sel=g('template-list');
+  if(!sel.value)return;
+  const templates=JSON.parse(localStorage.getItem('orix_templates')||'{}');
+  const data=templates[sel.value];
+  if(!data)return;
+  g('company').value=data.company;
+  g('lease-type').value=data.leaseType;
+  g('date-range').value=data.dateRange;
+  g('rate36').value=data.rate36;
+  g('rate48').value=data.rate48;
+  g('rate60').value=data.rate60;
+  g('com-rate').value=data.comRate;
+  g('subsidy').value=data.subsidy;
+  g('incentive').value=data.incentive;
+  g('target').value=data.target;
+  render();
+}
+
+function deleteTemplate(){
+  const sel=g('template-list');
+  if(!sel.value){alert('เลือก template ให้ลบ');return;}
+  if(!confirm('ลบ '+sel.value+'?'))return;
+  let templates=JSON.parse(localStorage.getItem('orix_templates')||'{}');
+  delete templates[sel.value];
+  localStorage.setItem('orix_templates',JSON.stringify(templates));
+  updateTemplateDropdown();
+}
+
+function updateTemplateDropdown(){
+  const sel=g('template-list');
+  const templates=JSON.parse(localStorage.getItem('orix_templates')||'{}');
+  sel.innerHTML='<option value="">-- เลือก Template --</option>';
+  Object.keys(templates).forEach(name=>{
+    const opt=document.createElement('option');
+    opt.value=name;opt.textContent=name;
+    sel.appendChild(opt);
+  });
+}
+
+// ★ DOWN STEPS CONTROL
+function renderDownStepsControl(){
+  const wrap=g('down-steps-control');
+  wrap.innerHTML=ALL_DOWN_STEPS.map(dp=>{
+    const pct=(dp*100).toFixed(0)+'%';
+    const active=activeDownSteps.has(dp);
+    return`<button class="btn-down-step ${active?'active':''}" onclick="toggleDownStep(${dp})">${pct}</button>`;
+  }).join('');
+}
+
+function toggleDownStep(dp){
+  if(activeDownSteps.has(dp))activeDownSteps.delete(dp);
+  else activeDownSteps.add(dp);
+  if(activeDownSteps.size===0)activeDownSteps.add(dp);
+  renderDownStepsControl();
+  renderPreview();
+}
+
+// ★ BULK IMPORT
+let bulkParsed=[];
+function toggleBulk(){
+  const p=g('bulk-panel');
+  p.classList.toggle('show');
+  if(p.classList.contains('show')){g('bulk-input').focus();}
+}
+
+function parseLine(line){
+  line=line.trim();if(!line)return null;
+  let model,price;
+  if(line.includes('\t')){const p=line.split('\t');model=p[0].trim();price=parseInt(p[p.length-1].replace(/[,฿\s]/g,''));}
+  else if(line.includes('|')){const p=line.split('|');model=p[0].trim();price=parseInt(p[p.length-1].replace(/[,฿\s]/g,''));}
+  else{
+    const segs=line.split(',');let pi=-1;
+    for(let i=segs.length-1;i>=0;i--){const c=segs[i].trim().replace(/[฿\s]/g,'');if(/^\d+$/.test(c)&&parseInt(c)>100000){pi=i;break;}}
+    if(pi>=0){price=parseInt(segs.slice(pi).join(',').replace(/[,฿\s]/g,''));model=segs.slice(0,pi).join(',').trim();}
+    else return{model:line,price:0,err:true};
+  }
+  if(!model||isNaN(price)||price<100000)return{model:line,price:0,err:true};
+  return{model,price,err:false};
+}
+
+function parseBulkPreview(){
+  const lines=g('bulk-input').value.split('\n');
+  bulkParsed=lines.map(parseLine).filter(Boolean);
+  const valid=bulkParsed.filter(x=>!x.err);
+  const pw=g('bulk-preview-wrap');
+  if(!bulkParsed.length){pw.style.display='none';g('btn-import').disabled=g('btn-import-replace').disabled=true;return;}
+  pw.style.display='block';
+  g('bulk-preview-list').innerHTML=bulkParsed.slice(0,10).map((item,i)=>`<div class="bulk-preview-row ${item.err?'err':''}" style="opacity:${item.err?0.5:1}"><div class="bpr-idx">${LETTERS[i%26]}</div><div style="flex:1">${item.model}</div>${item.err?'':'<div style="color:var(--navy);font-weight:700;">฿'+fmt(item.price)+'</div>'}</div>`).join('');
+  g('btn-import').disabled=g('btn-import-replace').disabled=valid.length===0;
+}
+
+function importBulk(replace){
+  const valid=bulkParsed.filter(x=>!x.err);
+  if(!valid.length)return;
+  const newCars=valid.map(item=>({id:nextId++,model:item.model,price:item.price}));
+  cars=replace?newCars:[...cars,...newCars];
+  g('bulk-panel').classList.remove('show');
+  g('bulk-input').value='';
+  g('bulk-preview-wrap').style.display='none';
+  bulkParsed=[];
+  render();
+}
+
+// ★ CAR MANAGEMENT
+function renderCarList(){
+  const list=g('car-list');list.innerHTML='';
+  cars.forEach((car,i)=>{
+    const row=document.createElement('div');row.className='car-row';
+    row.innerHTML=`<div class="car-badge">${LETTERS[i%26]}</div>
+      <div class="f-model field"><label>ชื่อรุ่น</label><div class="input-wrap"><input class="sm" type="text" value="${car.model}" oninput="updateCar(${car.id},'model',this.value)"></div></div>
+      <div class="f-price field"><label>ราคา</label><div class="input-wrap"><input class="sm" type="number" value="${car.price||''}" oninput="updateCar(${car.id},'price',parseFloat(this.value)||0)"></div></div>
+      <button class="btn-remove" onclick="removeCar(${car.id})">✕</button>`;
+    list.appendChild(row);
+  });
+  const vc=cars.filter(c=>c.model&&c.price>0).length;
+  g('car-sec-title').textContent=`รุ่นรถยนต์ (${vc} รุ่น)`;
+}
+function addCar(){cars.push({id:nextId++,model:'',price:0});render();}
+function removeCar(id){cars=cars.filter(c=>c.id!==id);render();}
+function updateCar(id,f,v){cars=cars.map(c=>c.id===id?{...c,[f]:v}:c);render();}
+
+function renderChips(){
+  const r36=gn('rate36'),r48=gn('rate48'),r60=gn('rate60'),sub=gn('subsidy'),tgt=gn('target'),inc=gn('incentive'),com=gn('com-rate');
+  g('rate-chips').innerHTML=`
+    <div class="chip"><span class="c-term">36m</span><span class="c-at">@</span><span class="c-rate">${r36}%</span></div>
+    <div class="chip"><span class="c-term">48m</span><span class="c-at">@</span><span class="c-rate">${r48}%</span></div>
+    <div class="chip"><span class="c-term">60m</span><span class="c-at">@</span><span class="c-rate">${r60}%</span></div>
+    <div class="chip gold" style="margin-left:auto"><span class="c-rate">฿${fmt(sub)}</span><span class="c-label">Subsidy</span></div>
+    <div class="chip goal-chip"><span class="c-rate">฿${fmt(tgt)}</span><span class="c-label">Target</span></div>`;
+}
+
+function renderReady(){
+  const valid=cars.filter(c=>c.model&&c.price>0);
+  const banner=g('ready-banner');
+  if(!valid.length){banner.style.display='none';return;}
+  banner.style.display='block';
+  g('ready-title').textContent=`✅ ${valid.length} รุ่นพร้อม`;
+  g('ready-models').innerHTML=valid.map(c=>`<div class="model-chip"><strong>${c.model}</strong></div>`).join('');
+}
+
+// ★ RENDER PRICE LIST
+function calcData(){
+  const sub=gn('subsidy'),tgt=gn('target');
+  const rates={36:gn('rate36')/100,48:gn('rate48')/100,60:gn('rate60')/100};
+  const activeSteps=Array.from(activeDownSteps).sort((a,b)=>a-b);
+  return cars.filter(c=>c.model&&c.price>0).map(car=>{
+    const adj=car.price-sub;
+    const rows=activeSteps.map(dp=>{
+      const dAmt=Math.round(car.price*dp),fin=adj-dAmt,row={dp,dAmt,fin};
+      TERMS.forEach(t=>{row[t]=calcMonthly(fin,rates[t],t/12);});
+      return row;
+    });
+    const goal=TERMS.map(t=>({t,d:goalSeekDownPL(adj,tgt,rates[t],t/12)}));
+    return{...car,rows,goal};
+  });
+}
+
+function renderPreview(){
+  const data=calcData();
+  const r36=gn('rate36'),r48=gn('rate48'),r60=gn('rate60');
+  const company=gv('company'),dateRange=gv('date-range');
+  
+  g('doc-header').innerHTML=`
+    <div>
+      <div class="doc-title-label">ใบเสนอราคา · Financial Lease</div>
+      <div class="doc-company">${company}</div>
+      <div class="doc-date" style="margin-top:4px;">${dateRange}</div>
+    </div>`;
+  
+  if(!data.length){g('price-table-wrap').innerHTML='<div style="padding:30px;text-align:center;color:var(--text-muted)">ไม่มีข้อมูลรถ</div>';return;}
+  
+  let html=`<table class="price-table">
+    <thead>
+      <tr class="hd-main">
+        <th class="left" style="width:28%;">MODEL</th>
+        <th style="width:12%;">PRICE</th>
+        <th class="col-down" style="width:10%;">DOWN %</th>
+        <th class="col-amt" style="width:12%;">DOWN AMT</th>
+        <th class="col-pmt" style="width:12%;">36m</th>
+        <th class="col-pmt" style="width:12%;">48m</th>
+        <th class="col-pmt" style="width:12%;">60m</th>
+      </tr>
+      <tr class="hd-rate">
+        <td colspan="4" style="text-align:left;">Flat Rate • Inc.VAT 7%</td>
+        <td class="rate-val">${r36}%</td>
+        <td class="rate-val">${r48}%</td>
+        <td class="rate-val">${r60}%</td>
+      </tr>
+    </thead><tbody>`;
+  
+  data.forEach((car,ci)=>{
+    html+=`<tr class="brand-row"><td colspan="7">${car.model}</td></tr>`;
+    car.rows.forEach(row=>{
+      html+=`<tr class="dp-row">
+        <td class="price-col">${fmt(car.price)}</td>
+        <td>${(row.dp*100).toFixed(0)}%</td>
+        <td>${fmt(row.dAmt)}</td>
+        <td>${fmt(row.fin)}</td>
+        <td class="monthly">${fmt(row[36])}</td>
+        <td class="monthly">${fmt(row[48])}</td>
+        <td class="monthly">${fmt(row[60])}</td>
+      </tr>`;
+    });
+    const g36=car.goal.find(x=>x.t===36),g48=car.goal.find(x=>x.t===48),g60=car.goal.find(x=>x.t===60);
+    const gCell=gg=>gg&&gg.d>0?`<td class="g-val">฿${fmt(gg.d)}</td>`:'<td class="g-val">—</td>';
+    html+=`<tr class="goal-row"><td colspan="4">Goal Down</td>${gCell(g36)}${gCell(g48)}${gCell(g60)}</tr>`;
+  });
+  
+  html+=`</tbody></table>
+    <div class="tbl-footer">
+      <div class="vat-note">ราคารวม VAT 7%</div>
+      <div class="cond-list">• Flat Rate อัตราดอกเบี้ยคงที่  • สามารถหักค่าใช้จ่ายได้</div>
+    </div>`;
+  
+  g('price-table-wrap').innerHTML=html;
+  
+  // Update A4 preview
+  if(g('chk-a4-preview').checked){
+    g('print-area-clone').innerHTML=g('print-area').innerHTML;
+    updateZoom();
+  }
+}
+
+// ★ A4 PREVIEW
+function toggleA4Preview(on){
+  const outer=g('a4-preview-outer');
+  if(on){
+    outer.classList.add('show');
+    renderPreview();
+  }else{
+    outer.classList.remove('show');
+  }
+}
+
+function updateZoom(){
+  const slider=g('zoom-slider');
+  currentZoom=parseInt(slider.value);
+  const paper=g('a4-paper');
+  paper.style.transform=`scale(${currentZoom/100})`;
+  paper.style.transformOrigin='top center';
+  g('zoom-display').textContent=currentZoom+'%';
+}
+
+// ★ PRINT & EXPORT
+function switchTab(tab){
+  currentTab=tab;
+  g('input-tab').style.display=tab==='input'?'block':'none';
+  g('preview-tab').style.display=tab==='preview'?'block':'none';
+  g('btn-tab-input').classList.toggle('active',tab==='input');
+  g('btn-tab-preview').classList.toggle('active',tab==='preview');
+  g('btn-print').style.display=tab==='preview'?'inline-flex':'none';
+  g('btn-excel').style.display=tab==='preview'?'inline-flex':'none';
+  if(tab==='preview'){
+    renderDownStepsControl();
+    renderPreview();
+  }
+}
+
+function printPage(){
+  document.body.classList.add('printing');
+  setTimeout(()=>window.print(),100);
+  setTimeout(()=>document.body.classList.remove('printing'),500);
+}
+
+function exportExcel(){
+  const data=calcData();
+  if(!data.length)return;
+  const wb=XLSX.utils.book_new();
+  const wsData=[];
+  wsData.push([gv('company')]);
+  wsData.push(['Price List — '+gv('date-range')]);
+  wsData.push([]);
+  wsData.push(['Model','Price',Array.from(activeDownSteps).map(d=>(d*100).toFixed(0)+'%').join('\t'),'36m Monthly','48m Monthly','60m Monthly'].join('\t')];
+  
+  data.forEach(car=>{
+    car.rows.forEach((row,ri)=>{
+      wsData.push([
+        ri===0?car.model:'',
+        ri===0?car.price:'',
+        (row.dp*100).toFixed(0)+'%',
+        row.dAmt,row.fin,row[36],row[48],row[60]
+      ]);
+    });
+  });
+
+  const ws=XLSX.utils.aoa_to_sheet(wsData);
+  XLSX.utils.book_append_sheet(wb,ws,'Price List');
+  XLSX.writeFile(wb,'ThaiOrix_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+function render(){renderCarList();renderChips();renderReady();if(currentTab==='preview')renderPreview();}
+
+// INIT
+updateTemplateDropdown();
+render();
+switchTab('input');
+</script>
+</body>
+</html>
