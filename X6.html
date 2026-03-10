@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thai Orix — Price List Generator v4</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:#003082;--navy-dark:#001d56;--navy-mid:#1a4faf;--navy-light:#e8eef8;--navy-pale:#f2f5fc;
+      --blue:#2a72d8;--gray-100:#f5f6f9;--gray-200:#eaecf2;--gray-300:#d4d9e8;--gray-400:#b0bad0;
+      --gray-500:#8090b0;--gray-700:#4a5570;--white:#ffffff;--text:#1e2440;--text-sub:#4a5570;
+      --text-muted:#8090b0;--gold:#b07800;--gold-light:#fdf8ed;--teal:#0a7080;--teal-light:#e6f4f6;
+    }
+    body{font-family:'Sarabun','IBM Plex Sans Thai',sans-serif;font-size:14px;background:var(--gray-100);color:var(--text);line-height:1.5;}
+    .topbar{background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 100%);padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 16px rgba(0,30,96,.3);position:sticky;top:0;z-index:100;}
+    .brand{display:flex;align-items:center;gap:12px;}
+    .brand-icon{width:36px;height:36px;border-radius:8px;background:var(--navy-mid);border:1.5px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:#fff;}
+    .brand-name{font-size:15px;font-weight:700;color:#fff;}
+    .brand-sub{font-size:10px;color:rgba(255,255,255,.45);letter-spacing:.12em;text-transform:uppercase;margin-top:1px;}
+    .tabs{display:flex;background:rgba(255,255,255,.1);border-radius:9px;padding:3px;gap:2px;}
+    .tab-btn{padding:7px 20px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;color:rgba(255,255,255,.55);background:transparent;transition:all .16s;}
+    .tab-btn.active{background:#fff;color:var(--navy);}
+    .nav-right{display:flex;align-items:center;gap:8px;}
+    .btn-topbar{padding:8px 16px;border:1.5px solid rgba(255,255,255,.25);border-radius:8px;color:#fff;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;transition:background .15s;display:none;align-items:center;gap:6px;}
+    .btn-print{background:var(--navy-mid);}.btn-print:hover{background:var(--blue);}
+    .btn-excel{background:#1a7840;}.btn-excel:hover{background:#26a05a;}
+    .wrap{max-width:1400px;margin:0 auto;padding:24px;}
+    .sec-title{font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+    .sec-title::before{content:'';display:inline-block;width:3px;height:13px;background:var(--navy-mid);border-radius:2px;}
+    .card{background:var(--white);border:1.5px solid var(--gray-300);border-radius:12px;padding:16px 18px;margin-bottom:16px;box-shadow:0 1px 8px rgba(0,48,130,.05);}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;}
+    .col-span-2{grid-column:1 / -1;}
+    .field{display:flex;flex-direction:column;gap:4px;}
+    .field label{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;}
+    .input-wrap{display:flex;align-items:center;background:var(--white);border:1.5px solid var(--gray-300);border-radius:8px;overflow:hidden;}
+    .input-wrap:focus-within{border-color:var(--navy);}
+    .input-wrap .sfx{padding:0 10px;font-size:13px;color:var(--navy-mid);background:var(--navy-pale);border-left:1.5px solid var(--gray-300);white-space:nowrap;align-self:stretch;display:flex;align-items:center;}
+    .input-wrap input{flex:1;border:none;outline:none;background:transparent;color:var(--text);padding:8px 12px;font-size:14px;font-family:inherit;}
+    #car-list{display:flex;flex-direction:column;gap:7px;margin-bottom:10px;}
+    .car-row{background:var(--white);border:1.5px solid var(--gray-300);border-radius:10px;padding:9px 13px;display:flex;align-items:flex-end;gap:10px;}
+    .car-badge{width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,var(--navy),var(--navy-mid));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
+    .car-row .f-model{flex:1;}.car-row .f-price{width:140px;}
+    .btn-remove{background:var(--gray-100);border:1.5px solid var(--gray-300);border-radius:7px;color:var(--gray-500);cursor:pointer;padding:6px 11px;font-size:14px;flex-shrink:0;font-family:inherit;transition:all .14s;}
+    .btn-remove:hover{background:var(--gray-200);color:var(--gray-700);}
+    .btn-add{width:100%;padding:10px;background:transparent;border:2px dashed var(--gray-400);border-radius:10px;color:var(--navy-mid);cursor:pointer;font-size:13px;font-family:inherit;font-weight:600;}
+    .btn-add:hover{border-color:var(--navy);color:var(--navy);background:var(--navy-pale);}
+    .ready-banner{background:var(--navy-pale);border:1.5px solid rgba(0,48,130,.15);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+    .ready-models{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+    .model-chip{background:var(--white);border:1.5px solid var(--gray-300);border-radius:6px;padding:3px 10px;font-size:12px;}
+    .model-chip strong{color:var(--navy);}
+    .btn-small{padding:6px 12px;border-radius:6px;border:1.5px solid var(--gray-300);background:var(--white);color:var(--text-sub);cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;transition:all .15s;}
+    .btn-small:hover{border-color:var(--navy);color:var(--navy);}
+    .btn-small.primary{background:var(--navy);border-color:var(--navy);color:#fff;}
+    .control-bar{background:var(--white);border:1px solid var(--gray-300);border-radius:8px;padding:10px;margin-bottom:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+    .bulk-panel{background:var(--white);border:1.5px solid var(--navy-light);border-radius:12px;padding:12px;margin-bottom:12px;display:none;}
+    .bulk-panel.show{display:block;}
+    #bulk-input{width:100%;min-height:100px;padding:8px;background:var(--gray-100);border:1px solid var(--gray-300);border-radius:6px;font-family:monospace;font-size:12px;resize:vertical;}
+    .btn-import{padding:6px 14px;background:var(--navy);border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;}
+    .btn-import:disabled{background:var(--gray-400);cursor:not-allowed;}
+
+    /* TEMPLATES */
+    .template-panel{background:var(--navy-pale);border:1.5px solid rgba(0,48,130,.15);border-radius:8px;padding:10px;margin-bottom:12px;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;}
+    .template-panel input{padding:6px 10px;border:1px solid var(--gray-300);border-radius:4px;font-size:12px;flex:1;min-width:150px;font-family:inherit;}
+    .template-panel button{padding:6px 12px;border:1px solid var(--navy);border-radius:4px;background:var(--white);color:var(--navy);cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;}
+    .template-panel button:hover{background:var(--navy-light);}
+    
+    .page-container{background:var(--white);border:1px solid var(--gray-300);border-radius:8px;padding:12px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.1);}
+    .page-label{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;padding:8px 12px;background:var(--gray-100);border-radius:4px;}
+    .tables-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .tables-grid.single{grid-template-columns:1fr;}
+    .table-wrapper{overflow-x:auto;}
+    table.price-table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed;}
+    table.price-table th{background:var(--navy);color:#fff;padding:5px 4px;font-size:8px;font-weight:700;text-align:center;white-space:normal;word-break:break-word;line-height:1.2;}
+    table.price-table th.left{text-align:left;}
+    table.price-table td{padding:3px 4px;border-bottom:1px solid var(--gray-200);font-size:10px;text-align:right;}
+    table.price-table td.left{text-align:left;}
+    table.price-table tr.brand-row td{background:linear-gradient(90deg,var(--navy-light),var(--gray-100));font-weight:700;font-size:9px;color:var(--navy);padding:4px;word-break:break-word;border-bottom:1px solid var(--gray-300);}
+    table.price-table tr.dp-row:nth-child(even){background:var(--gray-100);}
+    table.price-table tr.goal-row{background:var(--gold-light);border-top:1px dashed var(--gray-400);border-bottom:2px solid var(--gold);}
+    table.price-table tr.goal-row td{font-size:9px;color:var(--gold);font-weight:600;font-style:italic;}
+    table.report-table{width:100%;border-collapse:collapse;font-size:10px;}
+    table.report-table th{background:var(--teal);color:#fff;padding:4px;text-align:center;font-size:8px;font-weight:700;}
+    table.report-table td{padding:3px;border-bottom:1px solid var(--gray-200);text-align:right;font-size:9px;}
+    table.report-table tr:nth-child(even){background:var(--gray-100);}
+    .tbl-footer{background:var(--gray-100);border-top:2px solid var(--gray-300);padding:6px 8px;font-size:8px;color:var(--text-sub);line-height:1.4;}
+
+    @media print {
+      html,body{background:#fff;}
+      .topbar,#input-tab,.control-bar,.template-panel{display:none !important;}
+      .wrap{padding:0;max-width:unset;}
+      .page-container{page-break-inside:avoid;border:none;padding:0;margin:0 0 10mm 0;box-shadow:none;}
+      .page-label{display:none;}
+      .tables-grid{gap:10mm;}
+      table{font-size:8px;}
+      tr{page-break-inside:avoid;}
+      @page { size: A4; margin: 8mm; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon">TO</div>
+    <div>
+      <div class="brand-name">Thai Orix Leasing</div>
+      <div class="brand-sub">Price List v4</div>
+    </div>
+  </div>
+  <div class="nav-right">
+    <div class="tabs">
+      <button class="tab-btn active" id="btn-tab-input" onclick="switchTab('input')">⚙ Setup</button>
+      <button class="tab-btn" id="btn-tab-preview" onclick="switchTab('preview')">📋 List</button>
+      <button class="tab-btn" id="btn-tab-report" onclick="switchTab('report')">📊 Report</button>
+    </div>
+    <button class="btn-topbar btn-excel" id="btn-excel" onclick="exportExcel()">📥 Excel</button>
+    <button class="btn-topbar btn-print" id="btn-print" onclick="printPage()">🖨 Print</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <div id="input-tab">
+    <div class="sec-title">Company & Rate Setup</div>
+    <div class="card">
+      <div class="grid-2">
+        <div class="field"><label>Company</label><div class="input-wrap"><input type="text" id="company" value="บริษัท ไทยโอริกซ์ลีสซิ่ง จำกัด" oninput="render()"></div></div>
+        <div class="field"><label>Period</label><div class="input-wrap"><input type="text" id="date-range" value="Feb - Mar 2025" oninput="render()"></div></div>
+      </div>
+    </div>
+
+    <div class="sec-title">Interest Rates</div>
+    <div class="card">
+      <div class="grid-4">
+        <div class="field"><label>36m</label><div class="input-wrap"><input type="number" id="rate36" value="2.79" step="0.01" oninput="render()"><span class="sfx">%</span></div></div>
+        <div class="field"><label>48m</label><div class="input-wrap"><input type="number" id="rate48" value="2.79" step="0.01" oninput="render()"><span class="sfx">%</span></div></div>
+        <div class="field"><label>60m</label><div class="input-wrap"><input type="number" id="rate60" value="2.79" step="0.01" oninput="render()"><span class="sfx">%</span></div></div>
+        <div class="field"><label>Subsidy</label><div class="input-wrap"><input type="number" id="subsidy" value="20000" oninput="render()"><span class="sfx">฿</span></div></div>
+      </div>
+    </div>
+
+    <div class="sec-title">Templates (Save/Load)</div>
+    <div class="template-panel">
+      <input type="text" id="template-name" placeholder="Template name...">
+      <button onclick="saveTemplate()">💾 Save</button>
+      <select id="template-list" onchange="loadTemplate()"><option value="">-- Load --</option></select>
+      <button onclick="deleteTemplate()" style="background:#fee;color:#a00;border-color:#a00;">🗑 Delete</button>
+    </div>
+
+    <div class="sec-title">Vehicles</div>
+    <div class="control-bar">
+      <button class="btn-small primary" onclick="toggleBulk()">📋 Bulk Import</button>
+    </div>
+
+    <div id="bulk-panel" class="bulk-panel">
+      <textarea id="bulk-input" placeholder="Model&#9;Price&#10;Haval Jolion&#9;709000" oninput="parseBulkPreview()"></textarea>
+      <div style="margin-top:8px;display:flex;gap:6px;">
+        <button class="btn-import" id="btn-import" onclick="importBulk(false)" disabled>+ Add</button>
+        <button class="btn-import" id="btn-import-replace" onclick="importBulk(true)" disabled style="background:#8b5a00;">Replace</button>
+      </div>
+    </div>
+
+    <div id="car-list"></div>
+    <button class="btn-add" onclick="addCar()">+ Add Vehicle</button>
+
+    <div id="ready-banner" style="margin-top:16px;display:none;">
+      <div class="ready-banner">
+        <div>
+          <div style="font-weight:700;color:var(--navy);font-size:14px;">✅ Ready - <span id="car-count">0</span> vehicles</div>
+          <div class="ready-models" id="ready-models"></div>
+        </div>
+        <button class="btn-small" onclick="switchTab('preview')" style="background:var(--navy);color:#fff;border-color:var(--navy);">Preview →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="preview-tab" style="display:none;">
+    <div class="control-bar">
+      <span style="font-size:12px;color:var(--text-muted);font-weight:700;">Down %:</span>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;" id="deposit-toggles"></div>
+      <button class="btn-small" onclick="printPage()" style="margin-left:auto;">🖨 Print</button>
+    </div>
+    <div id="preview-area"></div>
+  </div>
+
+  <div id="report-tab" style="display:none;">
+    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;" id="report-car-selector"></div>
+      <button class="btn-small primary" onclick="printAllReports()" style="margin-left:auto;">🖨 All</button>
+    </div>
+    <div id="report-area"></div>
+  </div>
+</div>
+
+<script>
+const LETTERS='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const TERMS=[36,48,60];
+const ALL_DEPOSITS=[0,0.05,0.10,0.15,0.20,0.25,0.30];
+
+let cars=[{id:1,model:'BZ4X FWD',price:1529000},{id:2,model:'BZ4X AWD',price:1649000},{id:3,model:'Hilux',price:1491000}];
+let nextId=4, currentTab='input', currentReportCar=null;
+let activeDeposits=new Set([0,0.10,0.15,0.20,0.30]);
+let bulkParsed=[];
+
+const fmt=n=>Math.round(n).toLocaleString('th-TH');
+const g=id=>document.getElementById(id);
+const gv=id=>g(id).value.trim();
+const gn=id=>parseFloat(g(id).value)||0;
+const ceilSafe=v=>Math.ceil(v-1e-7);
+
+// DEPOSITS
+function getActiveDeposits(){return ALL_DEPOSITS.filter(d=>activeDeposits.has(d));}
+function renderDepositToggles(){
+  const wrap=g('deposit-toggles');
+  wrap.innerHTML=ALL_DEPOSITS.map(dp=>{
+    const pct=(dp*100).toFixed(0)+'%';
+    const on=activeDeposits.has(dp);
+    return`<button onclick="toggleDeposit(${dp})" style="padding:3px 10px;font-size:11px;font-weight:700;font-family:inherit;border-radius:6px;cursor:pointer;border:1.5px solid ${on?'var(--navy)':'var(--gray-300)'};background:${on?'var(--navy)':'var(--white)'};color:${on?'#fff':'var(--text-muted)'};transition:all .12s;">${pct}</button>`;
+  }).join('');
+}
+function toggleDeposit(dp){
+  if(activeDeposits.has(dp))activeDeposits.delete(dp);
+  else activeDeposits.add(dp);
+  if(activeDeposits.size===0)activeDeposits.add(dp);
+  renderDepositToggles();
+  renderPreview();
+}
+
+// TEMPLATES
+function saveTemplate(){
+  const name=prompt('Template name:');if(!name)return;
+  const data={company:gv('company'),rate36:gn('rate36'),rate48:gn('rate48'),rate60:gn('rate60'),subsidy:gn('subsidy'),dateRange:gv('date-range')};
+  let templates=JSON.parse(localStorage.getItem('orix_templates')||'{}');
+  templates[name]=data;
+  localStorage.setItem('orix_templates',JSON.stringify(templates));
+  updateTemplateDropdown();
+  alert('Saved: '+name);
+}
+function updateTemplateDropdown(){
+  const sel=g('template-list');
+  const templates=JSON.parse(localStorage.getItem('orix_templates')||'{}');
+  sel.innerHTML='<option value="">-- Load --</option>'+Object.keys(templates).map(k=>`<option value="${k}">${k}</option>`).join('');
+}
+function loadTemplate(){
+  const name=g('template-list').value;if(!name)return;
+  const templates=JSON.parse(localStorage.getItem('orix_templates')||'{}');
+  const data=templates[name];
+  if(!data)return;
+  g('company').value=data.company||'';
+  g('rate36').value=data.rate36||2.79;
+  g('rate48').value=data.rate48||2.79;
+  g('rate60').value=data.rate60||2.79;
+  g('subsidy').value=data.subsidy||20000;
+  g('date-range').value=data.dateRange||'';
+  render();
+}
+function deleteTemplate(){
+  const name=g('template-list').value;if(!name)return;
+  if(!confirm('Delete: '+name))return;
+  let templates=JSON.parse(localStorage.getItem('orix_templates')||'{}');
+  delete templates[name];
+  localStorage.setItem('orix_templates',JSON.stringify(templates));
+  g('template-list').value='';
+  updateTemplateDropdown();
+}
+
+// CARS
+function renderCarList(){
+  const list=g('car-list');list.innerHTML='';
+  cars.forEach((car,i)=>{
+    const row=document.createElement('div');row.className='car-row';
+    row.innerHTML=`<div class="car-badge">${LETTERS[i%26]}</div>
+      <div class="f-model field"><label>Model</label><div class="input-wrap"><input type="text" value="${car.model}" oninput="updateCar(${car.id},'model',this.value)"></div></div>
+      <div class="f-price field"><label>Price</label><div class="input-wrap"><input type="number" value="${car.price||''}" oninput="updateCar(${car.id},'price',parseFloat(this.value)||0)"></div></div>
+      <button class="btn-remove" onclick="removeCar(${car.id})">✕</button>`;
+    list.appendChild(row);
+  });
+}
+function addCar(){cars.push({id:nextId++,model:'',price:0});render();}
+function removeCar(id){cars=cars.filter(c=>c.id!==id);render();}
+function updateCar(id,f,v){cars=cars.map(c=>c.id===id?{...c,[f]:v}:c);renderReady();}
+
+// BULK IMPORT
+function toggleBulk(){g('bulk-panel').classList.toggle('show');}
+function parseLine(line){
+  line=line.trim();if(!line)return null;
+  let parts=line.split('\t');
+  if(parts.length<2)parts=line.split('|');
+  if(parts.length<2)return null;
+  let model=parts[0].trim();
+  let price=parseInt(parts[parts.length-1].replace(/[,฿\s]/g,''));
+  if(!model||isNaN(price)||price<100000)return null;
+  return{model,price};
+}
+function parseBulkPreview(){
+  const lines=g('bulk-input').value.split('\n');
+  bulkParsed=lines.map(parseLine).filter(Boolean);
+  g('btn-import').disabled=g('btn-import-replace').disabled=bulkParsed.length===0;
+}
+function importBulk(replace){
+  if(!bulkParsed.length)return;
+  const newCars=bulkParsed.map(x=>({id:nextId++,model:x.model,price:x.price}));
+  cars=replace?newCars:[...cars,...newCars];
+  g('bulk-panel').classList.remove('show');
+  g('bulk-input').value='';
+  bulkParsed=[];
+  render();
+}
+
+// RENDER
+function renderReady(){
+  const valid=cars.filter(c=>c.model&&c.price>0);
+  const banner=g('ready-banner');
+  if(!valid.length){banner.style.display='none';return;}
+  banner.style.display='flex';
+  g('car-count').textContent=valid.length;
+  g('ready-models').innerHTML=valid.map(c=>`<div class="model-chip"><strong>${c.model}</strong></div>`).join('');
+}
+
+// CALC & PREVIEW
+function calcMonthly(fin,rate,yrs){return fin<=0?0:ceilSafe(fin*(1+rate*yrs)/(yrs*12));}
+
+function excelRATE(nper,pmt,pv,fv=0,type=0){
+  if(!pv||!nper)return 0;
+  let r=0.08/12;
+  for(let i=0;i<300;i++){
+    const r1=1+r,r1n=Math.pow(r1,nper);
+    if(Math.abs(r)<1e-12)return r;
+    const f=pv*r1n+pmt*(1+r*type)*(r1n-1)/r+fv;
+    const dr1n=nper*Math.pow(r1,nper-1);
+    const df=pv*dr1n+pmt*type*(r1n-1)/r+pmt*(1+r*type)*(dr1n*r-(r1n-1))/(r*r);
+    if(!isFinite(df)||df===0)break;
+    const rNew=r-f/df;
+    if(Math.abs(rNew-r)<1e-12)return rNew;
+    r=isFinite(rNew)?rNew:r*0.5;
+  }
+  return r;
+}
+
+function renderPreview(){
+  const data=cars.filter(c=>c.model&&c.price>0);
+  if(!data.length){g('preview-area').innerHTML='<div style="padding:40px;text-align:center;color:var(--text-muted)">No vehicles</div>';return;}
+
+  const r36=gn('rate36'),r48=gn('rate48'),r60=gn('rate60'),sub=gn('subsidy');
+  const rates={36:r36/100,48:r48/100,60:r60/100};
+  const deps=getActiveDeposits();
+  const split=data.length>12;
+  const mid=Math.ceil(data.length/2);
+  const left=data.slice(0,mid);
+  const right=split?data.slice(mid):[];
+
+  let html=`<div class="page-container">
+    <div class="page-label">Page 1 of ${split?2:1}</div>
+    <div style="font-size:12px;margin-bottom:10px;color:var(--text-sub);">
+      <strong>${gv('company')}</strong> | ${gv('date-range')} | Rate: ${r36}% (36m) • ${r48}% (48m) • ${r60}% (60m)
+    </div>
+    <div class="tables-grid ${split?'':'single'}">
+      <div class="table-wrapper">
+        <table class="price-table">
+          <thead><tr><th class="left">Model</th><th>Price</th>${deps.map(d=>`<th>${(d*100).toFixed(0)}%</th>`).join('')}</tr></thead>
+          <tbody>`;
+  
+  left.forEach(car=>{
+    const adj=car.price-sub;
+    html+=`<tr class="brand-row"><td class="left" style="font-weight:600;">${car.model}</td><td>${fmt(car.price)}</td>${deps.map(d=>`<td>${fmt(Math.round(car.price*d))}</td>`).join('')}</tr>`;
+    TERMS.forEach(t=>{
+      const rate=rates[t];
+      html+=`<tr class="dp-row"><td class="left" style="font-size:9px;">` +deps.map(d=>{
+        const dAmt=Math.round(car.price*d);
+        const fin=adj-dAmt;
+        const m=calcMonthly(fin,rate,t/12);
+        return `<td>${fmt(m)}</td>`;
+      }).join('') + `</td></tr>`;
+    });
+  });
+  
+  html+=`</tbody></table></div>`;
+
+  if(split){
+    html+=`<div class="table-wrapper"><table class="price-table">
+      <thead><tr><th class="left">Model</th><th>Price</th>${deps.map(d=>`<th>${(d*100).toFixed(0)}%</th>`).join('')}</tr></thead>
+      <tbody>`;
+    right.forEach(car=>{
+      const adj=car.price-sub;
+      html+=`<tr class="brand-row"><td class="left" style="font-weight:600;">${car.model}</td><td>${fmt(car.price)}</td>${deps.map(d=>`<td>${fmt(Math.round(car.price*d))}</td>`).join('')}</tr>`;
+      TERMS.forEach(t=>{
+        const rate=rates[t];
+        html+=`<tr class="dp-row"><td class="left" style="font-size:9px;">` + deps.map(d=>{
+          const dAmt=Math.round(car.price*d);
+          const fin=adj-dAmt;
+          const m=calcMonthly(fin,rate,t/12);
+          return `<td>${fmt(m)}</td>`;
+        }).join('') + `</td></tr>`;
+      });
+    });
+    html+=`</tbody></table></div>`;
+  }
+
+  html+=`</div><div class="tbl-footer">• Flat Rate • Incl. VAT 7% • Can deduct as expense</div></div>`;
+  g('preview-area').innerHTML=html;
+}
+
+// REPORT
+function calcReportRow(price,down,period,subsidy,rate){
+  const adj=price-subsidy;
+  const dAmt=Math.round(adj*down);
+  const fin=adj-dAmt;
+  const int=Math.round(rate*fin*period);
+  const monthly=ceilSafe((fin+int)/(period*12));
+  const nper=period*12;
+  const pv=-(fin+int*1.07);
+  const tr=excelRATE(nper,monthly,pv)*12;
+  return{dAmt,fin,monthly,tr};
+}
+
+function renderReport(){
+  const valid=cars.filter(c=>c.model&&c.price>0);
+  const selector=g('report-car-selector');
+  if(!valid.length){selector.innerHTML='';g('report-area').innerHTML='<div style="padding:40px;text-align:center;">No vehicles</div>';return;}
+  
+  if(!currentReportCar||!valid.find(c=>c.id===currentReportCar))currentReportCar=valid[0].id;
+  selector.innerHTML=valid.map(c=>`<button class="btn-small ${c.id===currentReportCar?'primary':''}" onclick="selectReportCar(${c.id})">${c.model}</button>`).join('');
+  
+  const car=valid.find(c=>c.id===currentReportCar);
+  if(!car)return;
+
+  const r36=gn('rate36')/100,r48=gn('rate48')/100,r60=gn('rate60')/100;
+  const sub=gn('subsidy');
+  let html=`<div style="padding:12px;background:var(--white);border:1px solid var(--gray-300);border-radius:8px;margin-bottom:12px;">
+    <strong>${car.model}</strong> | Price: ฿${fmt(car.price)} | Subsidy: ฿${fmt(sub)}
+  </div>
+  <table class="report-table">
+    <thead>
+      <tr><th colspan="9">36 Months @ ${(r36*100).toFixed(2)}%</th><th colspan="9">48 Months @ ${(r48*100).toFixed(2)}%</th><th colspan="9">60 Months @ ${(r60*100).toFixed(2)}%</th></tr>
+      <tr><th>Down%</th><th>Down Amt</th><th>Finance</th><th>Monthly</th><th>True Rate</th><th colspan="4"></th>
+          <th>Down%</th><th>Down Amt</th><th>Finance</th><th>Monthly</th><th>True Rate</th><th colspan="4"></th>
+          <th>Down%</th><th>Down Amt</th><th>Finance</th><th>Monthly</th><th>True Rate</th></tr>
+    </thead><tbody>`;
+
+  const deps=[0,0.1,0.15,0.20,0.25,0.30];
+  deps.forEach(d=>{
+    const r36D=calcReportRow(car.price,d,3,sub,r36);
+    const r48D=calcReportRow(car.price,d,4,sub,r48);
+    const r60D=calcReportRow(car.price,d,5,sub,r60);
+    html+=`<tr><td>${(d*100).toFixed(0)}%</td><td>${fmt(r36D.dAmt)}</td><td>${fmt(r36D.fin)}</td><td>${fmt(r36D.monthly)}</td><td>${(r36D.tr*100).toFixed(2)}%</td><td colspan="4"></td>
+               <td>${(d*100).toFixed(0)}%</td><td>${fmt(r48D.dAmt)}</td><td>${fmt(r48D.fin)}</td><td>${fmt(r48D.monthly)}</td><td>${(r48D.tr*100).toFixed(2)}%</td><td colspan="4"></td>
+               <td>${(d*100).toFixed(0)}%</td><td>${fmt(r60D.dAmt)}</td><td>${fmt(r60D.fin)}</td><td>${fmt(r60D.monthly)}</td><td>${(r60D.tr*100).toFixed(2)}%</td></tr>`;
+  });
+  html+=`</tbody></table>`;
+  g('report-area').innerHTML=html;
+}
+
+function selectReportCar(id){currentReportCar=id;renderReport();}
+
+// EXPORT & PRINT
+function exportExcel(){
+  const data=cars.filter(c=>c.model&&c.price>0);
+  if(!data.length)return;
+  const wb=XLSX.utils.book_new();
+  const wsData=[[gv('company')],[gv('date-range')],[]];
+  wsData.push(['Model','Price',...TERMS.map(t=>t+'m')]);
+  const rates={36:gn('rate36')/100,48:gn('rate48')/100,60:gn('rate60')/100};
+  const sub=gn('subsidy');
+  data.forEach(car=>{
+    const adj=car.price-sub;
+    wsData.push([car.model,car.price,...TERMS.map(t=>calcMonthly(adj,rates[t],t/12))]);
+  });
+  const ws=XLSX.utils.aoa_to_sheet(wsData);
+  XLSX.utils.book_append_sheet(wb,ws,'Price List');
+  XLSX.writeFile(wb,'ThaiOrix_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+function printPage(){
+  document.body.style.background='#fff';
+  setTimeout(()=>window.print(),100);
+  setTimeout(()=>document.body.style.background='var(--gray-100)',500);
+}
+
+function printAllReports(){alert('Print all reports');}
+
+// TAB SWITCH
+function switchTab(tab){
+  currentTab=tab;
+  g('input-tab').style.display=tab==='input'?'block':'none';
+  g('preview-tab').style.display=tab==='preview'?'block':'none';
+  g('report-tab').style.display=tab==='report'?'block':'none';
+  g('btn-tab-input').classList.toggle('active',tab==='input');
+  g('btn-tab-preview').classList.toggle('active',tab==='preview');
+  g('btn-tab-report').classList.toggle('active',tab==='report');
+  const show=tab==='preview'||tab==='report';
+  g('btn-print').style.display=show?'inline-flex':'none';
+  g('btn-excel').style.display=show?'inline-flex':'none';
+  if(tab==='preview')renderPreview();
+  if(tab==='report')renderReport();
+}
+
+function render(){renderCarList();renderReady();renderDepositToggles();if(currentTab==='preview')renderPreview();if(currentTab==='report')renderReport();}
+
+// INIT
+updateTemplateDropdown();
+render();
+</script>
+</body>
+</html>
