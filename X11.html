@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Price List</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1 id="price-list-header">Product Price List</h1>
+        <nav>
+            <ul aria-label="Main navigation">
+                <li><a href="#home" aria-label="Home">Home</a></li>
+                <li><a href="#about" aria-label="About Us">About Us</a></li>
+                <li><a href="#contact" aria-label="Contact Information">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section>
+            <h2>Available Products</h2>
+            <ul id="product-list" aria-label="List of products">
+                <li>
+                    <h3 class="product-name" id="product-1-name">Product 1</h3>
+                    <p class="product-price" id="product-1-price">$10.00</p>
+                </li>
+                <li>
+                    <h3 class="product-name" id="product-2-name">Product 2</h3>
+                    <p class="product-price" id="product-2-price">$20.00</p>
+                </li>
+                <!-- More products can be added here -->
+            </ul>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2026 Jakkrawut-ORIX. All rights reserved.</p>
+    </footer>
+    <script type="text/javascript">
+        // Function to fetch products and display them in the product list
+        const fetchProducts = async () => {
+            try {
+                const response = await fetch('api/products');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const products = await response.json();
+                displayProducts(products);
+            } catch (error) {
+                console.error('Error fetching products:', error);
+            }
+        };
+
+        // Function to display products in the HTML
+        const displayProducts = (products) => {
+            const productList = document.getElementById('product-list');
+            products.forEach(product => {
+                const productItem = document.createElement('li');
+                const productName = document.createElement('h3');
+                productName.className = 'product-name';
+                productName.id = `product-${product.id}-name`;
+                productName.textContent = product.name;
+
+                const productPrice = document.createElement('p');
+                productPrice.className = 'product-price';
+                productPrice.id = `product-${product.id}-price`;
+                productPrice.textContent = `$${product.price}`;
+
+                productItem.appendChild(productName);
+                productItem.appendChild(productPrice);
+                productList.appendChild(productItem);
+            });
+        };
+
+        // Initialize product fetching on page load
+        window.onload = () => {
+            fetchProducts();
+        };
+    </script>
+</body>
+</html>
