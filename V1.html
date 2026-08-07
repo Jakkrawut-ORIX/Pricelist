@@ -1,679 +1,107 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Price List Generator – Financial Lease</title>
-  <!-- ฟอนต์ไทย -->
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thai ORIX Price List and Master Report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    :root{
-      /* โทนสี: ขาว / น้ำเงิน / แดง / เทาอ่อน */
-      --bg: #ffffff;
-      --bg-soft: #f6f7fb;        /* เทาอ่อนมาก */
-      --card: #f3f4f6;           /* เทาอ่อน */
-      --border: #e5e7eb;         /* เส้นคั่นเทาอ่อน */
-      --text: #0f172a;           /* ตัวอักษรหลัก */
-      --muted: #64748b;          /* ตัวรอง */
-      --blue: #1e3a8a;           /* น้ำเงินเข้ม */
-      --blue-600: #2563eb;       /* น้ำเงินสด */
-      --blue-50: #eff6ff;        /* น้ำเงินอ่อนมาก */
-      --red: #dc2626;            /* แดง */
-      --red-700: #b91c1c;        /* แดงเข้ม */
-      --chip-blue: #1d4ed8;
-      --chip-green: #16a34a;
-      --chip-amber: #b45309;
-      --chip-blue-text: #1e40af;
-      --chip-green-text: #065f46;
-      --chip-amber-text: #92400e;
-      --table-head: #f8fafc;     /* พื้นหัวตาราง */
-      --table-alt: #fbfbfd;      /* แถวสลับอ่อน */
-      --pill-bg: #eef2ff;        /* พื้นแท่งสรุป */
-      --link: #1d4ed8;
-      --focus: #93c5fd;
-      --shadow: 0 4px 24px rgba(2, 6, 23, 0.06);
-    }
-    *{ box-sizing: border-box; }
-    body{
-      margin: 0; background: var(--bg); color: var(--text);
-      font-family: 'Sarabun','IBM Plex Sans Thai',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-    }
-
-    /* Layout */
-    .container{ max-width: 1100px; margin: 0 auto; padding: 0 20px; }
-    header{
-      border-bottom: 1px solid var(--border);
-      padding: 18px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    }
-    .brand{
-      display: flex; flex-direction: column; gap: 4px;
-    }
-    .brand-top{ font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: .18em; text-transform: uppercase; }
-    .brand-main{ font-size: 22px; font-weight: 700; letter-spacing: -.02em; color: var(--blue); }
-    .brand-badge{
-      display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 4px;
-      color: var(--blue-600); background: var(--blue-50); border: 1px solid #dbeafe; width: fit-content;
-    }
-
-    /* Tabs & Buttons */
-    .tabs{ display: flex; gap: 6px; background: var(--bg-soft); border-radius: 12px; padding: 4px; }
-    .tab{
-      padding: 8px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; border: none; cursor: pointer;
-      color: var(--muted); background: transparent; transition: .2s;
-    }
-    .tab.active{ background: var(--blue-600); color: #fff; }
-    .btn{
-      padding: 10px 18px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer;
-      color: #fff; background: linear-gradient(135deg, var(--blue-600), var(--blue)); box-shadow: var(--shadow);
-    }
-    .btn-outline-red{
-      background: transparent; color: var(--red); border: 1px solid #f3d7d7;
-    }
-    .btn-ghost{
-      background: transparent; color: var(--link); border: 1px dashed #c7d2fe;
-    }
-
-    /* Cards & Sections */
-    .section{ padding: 22px 0; }
-    .section-title{
-      font-size: 13px; font-weight: 800; color: var(--blue); letter-spacing: .12em; text-transform: uppercase;
-      display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
-    }
-    .card{
-      background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px; box-shadow: var(--shadow);
-    }
-    .grid-2{ display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .grid-3{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
-
-    /* Inputs */
-    .field{ display: flex; flex-direction: column; gap: 6px; }
-    .field label{
-      font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .06em; text-transform: uppercase;
-    }
-    .input-wrap{
-      display: flex; align-items: center; background: #fff; border: 1px solid var(--border);
-      border-radius: 10px; overflow: hidden;
-    }
-    .prefix, .suffix{
-      padding: 0 10px; color: var(--muted); font-size: 13px; background: #fafafa; border-right: 1px solid var(--border);
-    }
-    .suffix{ border-right: none; border-left: 1px solid var(--border); background: #fafafa; }
-    .field input{
-      flex: 1; border: none; outline: none; padding: 10px 12px; background: transparent; font-size: 14px; color: var(--text);
-    }
-    .field input:focus{ box-shadow: inset 0 0 0 2px var(--focus); border-radius: 10px; }
-
-    /* Car card */
-    .car-card{
-      background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 12px;
-      display: flex; align-items: flex-end; gap: 12px;
-    }
-    .car-badge{
-      width: 28px; height: 28px; border-radius: 8px; background: var(--blue-50); color: var(--blue-600);
-      display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0; align-self: center;
-      border: 1px solid #dbeafe;
-    }
-    .car-remove{ padding: 6px 10px; border-radius: 8px; border: 1px solid #f3d7d7; color: var(--red); cursor: pointer; background: #fff; }
-
-    /* Preview Header */
-    .preview-header{
-      background: linear-gradient(90deg,#f8fafc,#eef2ff);
-      border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; margin-bottom: 10px;
-      border-bottom: 3px solid var(--blue-600);
-    }
-    .chips{ display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
-    .chip{
-      padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; color: #fff;
-      display: inline-flex; align-items: center; gap: 6px;
-    }
-    .chip.blue{ background: var(--chip-blue); }
-    .chip.green{ background: var(--chip-green); }
-    .chip.amber{ background: var(--chip-amber); }
-
-    /* Table */
-    .table-card{ background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-    table{ width: 100%; border-collapse: collapse; font-size: 13px; }
-    thead tr:first-child{ background: var(--table-head); }
-    thead th{
-      padding: 10px 12px; text-align: right; color: var(--muted); font-size: 11px; font-weight: 800; white-space: nowrap; border-bottom: 1px solid var(--border);
-    }
-    thead th:first-child{ text-align: left; min-width: 200px; }
-    tbody td{ padding: 8px 12px; text-align: right; color: #111827; border-bottom: 1px solid var(--border); white-space: nowrap; }
-    tbody tr:nth-child(even){ background: var(--table-alt); }
-    tbody .row-header{
-      background: #f1f5f9; color: var(--blue); font-weight: 800; font-size: 14px; border-top: 1px solid var(--border);
-    }
-
-    .foot-note{
-      padding: 16px 12px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; line-height: 1.9;
-      background: #fafafa;
-    }
-    .foot-note .ttl{ font-weight: 800; color: var(--blue); margin-bottom: 4px; }
-
-    /* Stat Pills (Quick preview) */
-    .pills{ display: flex; gap: 10px; flex-wrap: wrap; }
-    .pill{
-      display: inline-flex; align-items: center; gap: 8px; background: var(--pill-bg);
-      border: 1px solid #e0e7ff; color: var(--blue); border-radius: 10px; padding: 6px 12px; font-size: 12px; font-weight: 700;
-    }
-
-    /* Print */
-    @media print{
-      body *{ visibility: hidden; }
-      #print-area, #print-area *{ visibility: visible; }
-      #print-area{ position: absolute; inset: 0; background: #fff !important; color: #000 !important; padding: 12px 14px; }
-      header, .tabs, .btn, .car-remove, .btn-ghost{ display: none !important; }
-      .table-card, .preview-header, .card{ box-shadow: none !important; }
-    }
-
-    @media (max-width: 860px){
-      .grid-2{ grid-template-columns: 1fr; }
-      .grid-3{ grid-template-columns: 1fr; }
-      .car-card{ flex-wrap: wrap; }
-    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--navy:#003082;--navy-dark:#001d56;--navy-mid:#1a4faf;--navy-light:#e8eef8;--navy-pale:#f2f5fc;--blue:#2a72d8;--gray-100:#f5f6f9;--gray-200:#eaecf2;--gray-300:#d4d9e8;--gray-400:#b0bad0;--gray-500:#8090b0;--gray-700:#4a5570;--white:#fff;--text:#1e2440;--text-sub:#4a5570;--text-muted:#8090b0;--gold:#b07800;--gold-light:#fdf8ed;--teal:#0a7080;--teal-light:#e6f4f6;--red:#e60000;--yellow:#ffff99;--bluecell:#d9e6f7;--greencell:#e2f0d9;}
+    body{font-family:'Sarabun',sans-serif;font-size:14px;background:var(--gray-100);color:var(--text);line-height:1.5}
+    .topbar{height:60px;padding:0 28px;background:linear-gradient(135deg,var(--navy-dark),var(--navy));display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 16px rgba(0,30,96,.3);position:sticky;top:0;z-index:99}
+    .brand{display:flex;align-items:center;gap:12px}.brand-icon{width:36px;height:36px;border-radius:8px;background:var(--navy-mid);border:1.5px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}.brand-name{font-size:15px;font-weight:800;color:#fff}.brand-sub{font-size:10px;color:rgba(255,255,255,.55);letter-spacing:.13em;text-transform:uppercase}.nav-right{display:flex;align-items:center;gap:8px}.tabs{display:flex;background:rgba(255,255,255,.1);border-radius:9px;padding:3px;gap:2px}.tab-btn{padding:7px 18px;border:none;border-radius:7px;background:transparent;color:rgba(255,255,255,.6);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}.tab-btn.active{background:#fff;color:var(--navy)}.btn-topbar{display:none;align-items:center;gap:6px;padding:8px 14px;border:1.5px solid rgba(255,255,255,.25);border-radius:8px;color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}.btn-excel{background:#1a7840}.btn-print{background:var(--navy-mid)}
+    .wrap{max-width:1180px;margin:0 auto;padding:24px}.sec-title{font-size:10px;font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px;display:flex;align-items:center;gap:8px}.sec-title::before{content:'';width:3px;height:13px;background:var(--navy-mid);border-radius:2px}.card{background:#fff;border:1.5px solid var(--gray-300);border-radius:12px;padding:16px 18px;margin-bottom:16px;box-shadow:0 1px 8px rgba(0,48,130,.05)}.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.col-span-2{grid-column:1/-1}.field{display:flex;flex-direction:column;gap:4px}.field label{font-size:10px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em}.input-wrap{display:flex;align-items:center;border:1.5px solid var(--gray-300);border-radius:8px;overflow:hidden;background:#fff}.input-wrap:focus-within{border-color:var(--navy)}.input-wrap .pfx,.input-wrap .sfx{padding:0 10px;background:var(--navy-pale);color:var(--navy-mid);border-right:1.5px solid var(--gray-300);align-self:stretch;display:flex;align-items:center}.input-wrap .sfx{border-right:none;border-left:1.5px solid var(--gray-300)}.input-wrap input,.input-wrap select{width:100%;flex:1;border:none;outline:none;background:transparent;color:var(--text);padding:8px 12px;font-family:inherit;font-size:14px}.input-wrap input.sm{padding:7px 10px;font-size:13px}
+    .rate-chips{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}.chip{display:flex;align-items:center;gap:5px;background:var(--navy-light);border:1.5px solid rgba(0,48,130,.12);border-radius:7px;padding:4px 11px}.chip .c-term,.chip .c-rate{font-weight:800;color:var(--navy)}.chip .c-at,.chip .c-label{font-size:10px;color:var(--text-muted)}.chip.gold{background:var(--gold-light);border-color:rgba(176,120,0,.2)}.chip.gold .c-rate{color:var(--gold)}.chip.goal-chip{background:#fdf8ed;border-color:rgba(176,120,0,.3)}.chip.goal-chip .c-rate{color:#8a5e00}
+    .car-sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.btn-bulk-toggle{font-size:12px;font-weight:700;font-family:inherit;padding:5px 13px;border-radius:7px;cursor:pointer;background:var(--navy-pale);border:1.5px solid var(--navy-light);color:var(--navy)}.btn-bulk-toggle.active{background:var(--navy-light);border-color:var(--navy)}.bulk-panel{background:#fff;border:1.5px solid var(--navy-light);border-radius:12px;padding:14px 16px;margin-bottom:12px}.bulk-hint{font-size:12px;color:var(--text-muted);margin-bottom:9px;line-height:1.75}.bulk-hint code{background:var(--gray-200);padding:1px 6px;border-radius:4px;font-size:11px;color:var(--navy-mid)}#bulk-input{width:100%;min-height:110px;padding:10px 12px;background:var(--gray-100);border:1.5px solid var(--gray-300);border-radius:8px;font-family:monospace;font-size:13px;color:var(--text);resize:vertical;outline:none;line-height:1.7}.bulk-preview-label{font-size:10px;font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:.1em;margin:10px 0 5px}.bulk-preview-list{display:flex;flex-direction:column;gap:3px;max-height:170px;overflow-y:auto}.bulk-preview-row{display:flex;align-items:center;gap:9px;background:var(--navy-pale);border:1.5px solid var(--navy-light);border-radius:7px;padding:5px 11px;font-size:13px}.bulk-preview-row .bpr-idx{width:20px;height:20px;border-radius:5px;background:var(--navy-mid);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center}.bulk-preview-row .bpr-model{flex:1}.bulk-preview-row .bpr-price{font-weight:800;color:var(--navy)}.bulk-preview-row.err{background:#fff5f5;border-color:#e8c0c0;color:#a04040}.bulk-actions{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}.bulk-error-msg{font-size:12px;color:#a04040;background:#fff5f5;border:1.5px solid #e8c0c0;border-radius:7px;padding:6px 11px;margin-top:7px;display:none}.btn-import,.btn-preview{padding:8px 17px;background:var(--navy);border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:13px;font-weight:800;font-family:inherit}.btn-import:disabled{background:var(--gray-400);cursor:not-allowed}.btn-import-replace,.btn-bulk-cancel{padding:8px 14px;background:#fff;border:1.5px solid var(--gray-300);border-radius:8px;color:var(--text-muted);cursor:pointer;font-family:inherit}.btn-import-replace{border-color:var(--navy);color:var(--navy)}
+    #car-list{display:flex;flex-direction:column;gap:7px;margin-bottom:10px}.car-row{background:#fff;border:1.5px solid var(--gray-300);border-radius:10px;padding:9px 13px;display:flex;align-items:flex-end;gap:10px}.car-badge{width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,var(--navy),var(--navy-mid));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0;align-self:center}.car-row .f-model{flex:1}.car-row .f-price{width:170px}.btn-remove{background:var(--gray-100);border:1.5px solid var(--gray-300);border-radius:7px;color:var(--gray-500);cursor:pointer;padding:6px 11px;font-size:14px}.btn-add{width:100%;padding:10px;background:transparent;border:2px dashed var(--gray-400);border-radius:10px;color:var(--navy-mid);cursor:pointer;font-size:13px;font-family:inherit;font-weight:800}.ready-banner{background:var(--navy-pale);border:1.5px solid rgba(0,48,130,.15);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}.ready-models{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.model-chip{background:#fff;border:1.5px solid var(--gray-300);border-radius:6px;padding:3px 10px;font-size:12px}.model-chip strong{color:var(--navy)}.model-chip span{color:var(--text-muted);margin-left:5px}
+    #preview-tab,#report-tab{display:none}.doc-header{background:#fff;border:1.5px solid var(--gray-300);border-top:4px solid var(--navy);border-radius:12px;padding:14px 20px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;box-shadow:0 1px 8px rgba(0,48,130,.06)}.doc-title-label{font-size:10px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.14em}.doc-company{font-size:20px;font-weight:800;color:var(--navy)}.doc-sub{font-size:13px;color:var(--text-sub)}.doc-date-label{font-size:10px;color:var(--text-muted);text-align:right}.doc-date{font-size:13px;font-weight:700;text-align:right}.doc-logo{height:36px}.table-card{background:#fff;border:1.5px solid var(--gray-300);border-radius:12px;overflow:hidden;box-shadow:0 1px 8px rgba(0,48,130,.06)}
+    #preview-controls{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}.deposit-toggle{padding:3px 10px;font-size:11px;font-weight:800;font-family:inherit;border-radius:6px;cursor:pointer;border:1.5px solid var(--gray-300);background:#fff;color:var(--text-muted)}.deposit-toggle.active{border-color:var(--navy);background:var(--navy);color:#fff}.print-note{margin-left:auto;font-size:11px;color:var(--text-muted)}
+    table.price-table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}table.price-table thead tr.hd-main th{background:var(--navy);padding:8px 10px;font-size:10px;font-weight:800;color:rgba(255,255,255,.7);text-align:right;white-space:nowrap}table.price-table thead tr.hd-main th.left{text-align:left}table.price-table thead tr.hd-main th.col-36{background:#002060;color:#fff}table.price-table thead tr.hd-main th.col-48{background:#1040a0;color:#fff}table.price-table thead tr.hd-main th.col-60{background:#2a5ec8;color:#fff}table.price-table thead tr.hd-rate td{background:var(--gray-200);padding:4px 10px;font-size:11px;color:var(--text-muted);border-bottom:2px solid var(--gray-300)}table.price-table thead tr.hd-rate td.rate-val{text-align:center;font-weight:900}.brand-row td{background:linear-gradient(90deg,var(--navy-light),var(--gray-100));padding:7px 10px;font-weight:800;color:var(--navy);border-bottom:1px solid var(--gray-300)}.brand-row.has-border{border-top:2px solid var(--navy)}.dp-row td{padding:5px 10px;text-align:right;border-bottom:1px solid var(--gray-200);white-space:nowrap;color:var(--text-sub)}.dp-row:nth-child(even){background:var(--gray-100)}.dp-row td.monthly{font-weight:800}.m36{color:#002060;background:rgba(0,32,96,.05)}.m48{color:#1040a0;background:rgba(16,64,160,.05)}.m60{color:#2a5ec8;background:rgba(42,94,200,.05)}.goal-row td{padding:5px 10px;font-size:11px;color:var(--gold);font-style:italic;font-weight:800;background:var(--gold-light);border-top:1px dashed var(--gray-400);border-bottom:2px solid var(--gray-300)}.goal-row td.g-val{text-align:right;font-style:normal}.tbl-footer{background:var(--gray-100);border-top:2px solid var(--gray-300);padding:12px 16px}.vat-note{font-weight:800;color:var(--navy);font-size:12px}.cond-list{font-size:11px;color:var(--text-sub);display:flex;flex-direction:column;line-height:1.65}
+    .report-car-selector{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}.report-car-btn{padding:7px 15px;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;border:1.5px solid var(--gray-300);background:#fff;color:var(--text-sub);font-family:inherit}.report-car-btn.active{background:var(--teal);border-color:var(--teal);color:#fff}.report-doc-header{background:#fff;border:1.5px solid var(--gray-300);border-top:4px solid var(--teal);border-radius:12px;padding:13px 18px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;box-shadow:0 1px 8px rgba(10,112,128,.06)}.report-tag{display:inline-block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;background:var(--teal-light);color:var(--teal);border:1.5px solid rgba(10,112,128,.2);border-radius:5px;padding:2px 8px;margin-bottom:4px}.report-car-name{font-size:17px;font-weight:800}.report-car-price{font-size:12px;color:var(--text-sub)}.report-params{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.rparam{background:var(--gray-100);border:1.5px solid var(--gray-300);border-radius:7px;padding:5px 10px;text-align:center;min-width:66px}.rparam-label{font-size:8px;font-weight:800;color:var(--text-muted);text-transform:uppercase}.rparam-val{font-size:12px;font-weight:800}.rparam.hl{background:var(--teal-light)}.rparam.goal-p{background:var(--gold-light)}.report-table-wrap{overflow-x:auto;border-radius:12px;border:1.5px solid var(--gray-300);box-shadow:0 1px 8px rgba(0,48,130,.06);background:#fff}.report-empty{padding:50px;text-align:center;color:var(--text-muted)}
+    .master-report-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px;white-space:normal}.master-report-table th,.master-report-table td{border:1px solid #333;padding:4px 5px;text-align:right;vertical-align:middle;line-height:1.15}.master-report-table th{background:#f3f3f3;color:#111;text-align:center;font-weight:900;font-size:9px}.master-report-table .td-model{text-align:left;font-weight:800;color:#111}.master-report-table .yellow,.master-report-table .td-yellow{background:var(--yellow)}.master-report-table .blue,.master-report-table .td-blue{background:var(--bluecell)}.master-report-table .red,.master-report-table .td-red{background:var(--red);color:#fff;font-weight:900}.master-report-table .actual-red{background:#e60000!important;color:#fff!important;font-weight:900}.master-report-table .actual-orange{background:#f4b183!important;color:#111!important;font-weight:900}.master-report-table .actual-green{background:#70ad47!important;color:#fff!important;font-weight:900}.master-report-table .green,.master-report-table .td-green{background:var(--greencell);color:#0b5a20;font-weight:900}.master-report-table .td-finance{font-weight:900;color:#111}.master-report-table .td-monthly{font-weight:900;color:#006040;background:#eef9ef}.master-report-table .rt-period-header td{background:#e8eef8;color:#003082;font-weight:900;text-align:center;border-top:2px solid #003082}.master-report-table .master-goal td{background:#fff2cc;font-weight:800}.master-report-table .master-goal .td-red{background:#ffc000;color:#111}.master-report-table col.c-model{width:12%}.master-report-table col.c-num{width:6.2%}.master-report-table col.c-small{width:5%}.master-report-table col.c-tr{width:6.4%}
+    @page{size:A4 portrait;margin:8mm 10mm}
+    @media print{html,body{background:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.topbar,#input-tab,#preview-controls,.report-car-selector{display:none!important}.wrap{padding:0!important;max-width:none!important;width:100%!important;margin:0!important}#preview-tab,#report-tab{display:none!important}body.printing-pricelist #preview-tab{display:block!important}body.printing-report #report-tab,body.printing-all-reports #report-tab{display:block!important}body.printing-all-reports #report-print-area{display:none!important}body.printing-all-reports #_all-reports-print{display:block!important}.doc-header,.report-doc-header{border-radius:0!important;border-left:none!important;border-right:none!important;box-shadow:none!important;page-break-inside:avoid;break-inside:avoid}.table-card,.report-table-wrap{border:none!important;border-radius:0!important;box-shadow:none!important;overflow:visible!important}body.printing-pricelist .doc-header{padding:2mm 0!important;margin:0 0 1.5mm!important}.doc-logo{height:15px!important}body.printing-pricelist .doc-company{font-size:10pt!important}.doc-sub,.doc-date{font-size:6.4pt!important}body.printing-pricelist table.price-table{width:100%!important;font-size:6pt!important;table-layout:fixed!important}body.printing-pricelist table.price-table th,body.printing-pricelist table.price-table td{padding:.65mm .9mm!important;font-size:5.8pt!important;line-height:1.05!important}body.printing-pricelist .tbl-footer{padding:1.2mm 0 0!important}.vat-note{font-size:5.8pt!important}.cond-list{font-size:5pt!important;line-height:1.25!important}body.printing-report .report-doc-header,body.printing-all-reports .report-doc-header{padding:1.2mm 0 1.4mm!important;margin:0 0 1.2mm!important}.report-car-name{font-size:8.5pt!important}.report-car-price{font-size:5.8pt!important}.rparam{padding:.55mm 1mm!important;min-width:auto!important}.rparam-label{font-size:4.2pt!important}.rparam-val{font-size:5.2pt!important}body.printing-report table.master-report-table,body.printing-all-reports table.master-report-table{width:100%!important;table-layout:fixed!important;font-size:4.65pt!important;white-space:normal!important;border-collapse:collapse!important}body.printing-report table.master-report-table th,body.printing-report table.master-report-table td,body.printing-all-reports table.master-report-table th,body.printing-all-reports table.master-report-table td{padding:.42mm .38mm!important;font-size:4.65pt!important;line-height:1.05!important;border:.4pt solid #333!important}.master-report-table .rt-period-header td{font-size:5.2pt!important;padding:.55mm!important}body.printing-all-reports .all-report-block{page-break-after:always}body.printing-all-reports .all-report-block:last-child{page-break-after:auto}tr,td,th{page-break-inside:avoid;break-inside:avoid}}
+    @media(max-width:800px){.grid-2,.grid-4{grid-template-columns:1fr}.topbar{height:auto;padding:12px;flex-wrap:wrap}.wrap{padding:12px}.car-row{flex-wrap:wrap}.car-row .f-price{width:100%}.report-table-wrap,.table-card{overflow:auto}}
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- Header -->
-    <header>
-      <div class="brand">
-        <span class="brand-top">Thai Orix</span>
-        <span class="brand-main">Price List Generator</span>
-        <span class="brand-badge">Financial Lease System</span>
-      </div>
-      <div style="display:flex; gap:12px; align-items:center;">
-        <div class="tabs">
-          <button class="tab active" id="tab-input">⚙ ตั้งค่า</button>
-          <button class="tab" id="tab-preview">📋 Price List</button>
-        </div>
-        <button class="btn" id="btn-print" style="display:none;">🖨 Print / PDF</button>
-      </div>
-    </header>
-
-    <!-- Input Section -->
-    <section class="section" id="input-section">
-      <div class="section-title"><span style="color:var(--blue);">▎</span> ข้อมูลบริษัท</div>
-      <div class="card">
-        <div class="grid-2">
-          <div class="field">
-            <label>ชื่อบริษัท</label>
-            <div class="input-wrap">
-              <input id="company" type="text" value="บริษัท ไทยโอริกซ์ลีสซิ่ง จำกัด" />
-            </div>
-          </div>
-          <div class="field">
-            <label>ประเภทสัญญา</label>
-            <div class="input-wrap">
-              <input id="leaseType" type="text" value="Financial Lease" />
-            </div>
-          </div>
-          <div class="field">
-            <label>ช่วงราคา (วันที่)</label>
-            <div class="input-wrap">
-              <input id="dateRange" type="text" value="1 กุมภาพันธ์ ถึง 31 มีนาคม 2569" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="section-title" style="margin-top:22px;"><span style="color:var(--blue);">▎</span> อัตราดอกเบี้ย (Flat Rate)</div>
-      <div class="card">
-        <div class="grid-3">
-          <div class="field">
-            <label>36 เดือน (%)</label>
-            <div class="input-wrap">
-              <input id="rate36" type="number" step="0.01" value="2.99" />
-              <span class="suffix">%</span>
-            </div>
-          </div>
-          <div class="field">
-            <label>48 เดือน (%)</label>
-            <div class="input-wrap">
-              <input id="rate48" type="number" step="0.01" value="2.99" />
-              <span class="suffix">%</span>
-            </div>
-          </div>
-          <div class="field">
-            <label>60 เดือน (%)</label>
-            <div class="input-wrap">
-              <input id="rate60" type="number" step="0.01" value="2.99" />
-              <span class="suffix">%</span>
-            </div>
-          </div>
-        </div>
-        <div class="grid-2" style="margin-top:14px;">
-          <div class="field">
-            <label>Subsidy (บาท)</label>
-            <div class="input-wrap">
-              <span class="prefix">฿</span>
-              <input id="subsidy" type="number" value="20000" />
-            </div>
-          </div>
-          <div class="field">
-            <label>Target Monthly (บาท) – Goal Seek</label>
-            <div class="input-wrap">
-              <span class="prefix">฿</span>
-              <input id="targetMonthly" type="number" value="36000" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="section-title" style="margin-top:22px; display:flex; justify-content:space-between; align-items:center;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span style="color:var(--blue);">▎</span> รุ่นรถยนต์
-          <span id="car-count" style="background: var(--blue-50); color: var(--blue-600); border: 1px solid #dbeafe; border-radius: 999px; padding: 2px 10px; font-size: 11px;">0 รุ่น</span>
-        </div>
-      </div>
-      <div id="car-list" style="display:flex; flex-direction:column; gap:10px;"></div>
-      <button class="btn-ghost" id="btn-add" style="width:100%; padding:12px; border-radius:12px; margin-top:8px;">
-        + เพิ่มรุ่นรถ
-      </button>
-
-      <div id="quick-preview-wrap" style="display:none;">
-        <div class="section-title" style="margin-top:24px;"><span style="color:var(--blue);">▎</span> ตัวอย่างราคา (ดูทั้งหมดที่แท็บ Price List)</div>
-        <div class="card">
-          <div class="pills" id="quick-pills"></div>
-          <button class="btn" style="margin-top:14px;" id="btn-goto-preview">ดู Price List เต็ม →</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- Preview / Print Section -->
-    <section class="section" id="preview-section" style="display:none;">
-      <div id="print-area">
-        <div class="preview-header">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
-            <div>
-              <div style="font-size:11px; color:var(--muted); letter-spacing:.15em; text-transform:uppercase; margin-bottom:4px;">ใบเสนอราคา</div>
-              <div style="font-size:20px; font-weight:800; color:var(--blue);" id="doc-company">บริษัท ไทยโอริกซ์ลีสซิ่ง จำกัด</div>
-              <div style="font-size:13px; color:var(--muted); margin-top:4px;">บริการลีสซิ่งรถยนต์ · <span id="doc-leaseType">Financial Lease</span></div>
-            </div>
-            <div style="text-align:right;">
-              <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">ราคาตั้งแต่วันที่</div>
-              <div style="font-size:14px; color:#111827; font-weight:800;" id="doc-dateRange">1 กุมภาพันธ์ ถึง 31 มีนาคม 2569</div>
-              <div class="chips" style="margin-top:10px;">
-                <div class="chip blue" id="chip36">36m @ 2.99%</div>
-                <div class="chip green" id="chip48">48m @ 2.99%</div>
-                <div class="chip amber" id="chip60">60m @ 2.99%</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="table-card" id="table-wrap">
-          <!-- ตารางจะถูกใส่ด้วย JS -->
-        </div>
-      </div>
-    </section>
+<div class="topbar"><div class="brand"><div class="brand-icon">TO</div><div><div class="brand-name">Thai ORIX Leasing</div><div class="brand-sub">Price List and Master Report</div></div></div><div class="nav-right"><div class="tabs"><button class="tab-btn active" id="btn-tab-input" onclick="switchTab('input')">⚙ ตั้งค่า</button><button class="tab-btn" id="btn-tab-preview" onclick="switchTab('preview')">📋 Price List</button><button class="tab-btn" id="btn-tab-report" onclick="switchTab('report')">📊 รายงาน</button></div><button class="btn-topbar btn-excel" id="btn-excel" onclick="exportExcel()">📥 Export Excel</button><button class="btn-topbar btn-print" id="btn-print" onclick="printSinglePage()">🖨 Print / PDF</button></div></div>
+<div class="wrap">
+  <div id="input-tab">
+    <div class="sec-title">ข้อมูลบริษัทและเอกสาร</div>
+    <div class="card"><div class="grid-2"><div class="field"><label>ชื่อบริษัท</label><div class="input-wrap"><input type="text" id="company" value="บริษัท ไทยโอริกซ์ลีสซิ่ง จำกัด" oninput="render()"></div></div><div class="field"><label>ประเภทสัญญา</label><div class="input-wrap"><input type="text" id="lease-type" value="Financial Lease" oninput="render()"></div></div><div class="field col-span-2"><label>ช่วงระยะเวลาราคา</label><div class="input-wrap"><input type="text" id="date-range" value="1 กุมภาพันธ์ ถึง 31 มีนาคม 2569" oninput="render()"></div></div></div></div>
+    <div class="sec-title">อัตราดอกเบี้ยและเงื่อนไขการเงิน</div>
+    <div class="card"><div class="grid-4"><div class="field"><label>อัตรา 36 เดือน</label><div class="input-wrap"><input type="number" id="rate36" value="2.79" step="0.01" oninput="render()"><span class="sfx">%</span></div></div><div class="field"><label>อัตรา 48 เดือน</label><div class="input-wrap"><input type="number" id="rate48" value="2.79" step="0.01" oninput="render()"><span class="sfx">%</span></div></div><div class="field"><label>อัตรา 60 เดือน</label><div class="input-wrap"><input type="number" id="rate60" value="2.79" step="0.01" oninput="render()"><span class="sfx">%</span></div></div><div class="field"><label>Commission Rate</label><div class="input-wrap"><input type="number" id="com-rate" value="8" step="0.1" oninput="render()"><span class="sfx">%</span></div></div><div class="field"><label>Commission Base</label><div class="input-wrap"><select id="com-base" onchange="render()"><option value="finance" selected>ยอดจัด</option><option value="interest">ดอกเบี้ยรวม</option></select></div></div><div class="field"><label>Subsidy สำหรับ Price List</label><div class="input-wrap"><span class="pfx">฿</span><input type="number" id="subsidy" value="20000" oninput="render()"></div></div><div class="field"><label>Incentive / Extra Cost</label><div class="input-wrap"><span class="pfx">฿</span><input type="number" id="incentive" value="5000" oninput="render()"></div></div><div class="field"><label>Target Monthly In VAT</label><div class="input-wrap"><span class="pfx">฿</span><input type="number" id="target" value="36000" oninput="render()"></div></div></div><div class="rate-chips" id="rate-chips"></div></div>
+    <div class="car-sec-header"><div class="sec-title" id="car-sec-title" style="margin-bottom:0">รุ่นรถยนต์</div><button class="btn-bulk-toggle" id="btn-bulk" onclick="toggleBulk()">📋 วางข้อมูลเป็นชุด</button></div>
+    <div id="bulk-panel" class="bulk-panel" style="display:none"><div style="font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">วางข้อมูลรถเป็นชุด</div><div class="bulk-hint">รองรับ Copy จาก Excel: <code>ชื่อรุ่น [Tab] ราคา</code> หรือ CSV: <code>ชื่อรุ่น, ราคา</code> หรือ <code>ชื่อรุ่น | ราคา</code></div><textarea id="bulk-input" placeholder="ตัวอย่าง:
+ZEEKR X Standard RWD    999000
+ZEEKR X Flagship AWD    1069000" oninput="parseBulkPreview()" spellcheck="false"></textarea><div id="bulk-preview-wrap" style="display:none"><div class="bulk-preview-label">ตัวอย่างที่จะนำเข้า</div><div class="bulk-preview-list" id="bulk-preview-list"></div></div><div class="bulk-error-msg" id="bulk-error"></div><div class="bulk-actions"><button class="btn-import" id="btn-import" onclick="importBulk(false)" disabled>+ เพิ่มเข้ารายการ (<span id="import-count">0</span> รุ่น)</button><button class="btn-import-replace" id="btn-import-replace" onclick="importBulk(true)" disabled>แทนที่ทั้งหมด</button><button class="btn-bulk-cancel" onclick="toggleBulk()">ยกเลิก</button></div></div>
+    <div id="car-list"></div><button class="btn-add" onclick="addCar()">+ เพิ่มรุ่นรถ</button>
+    <div id="ready-banner" style="margin-top:16px;display:none"><div class="ready-banner"><div><div style="font-weight:800;color:var(--navy);font-size:14px" id="ready-title"></div><div class="ready-models" id="ready-models"></div></div><button class="btn-preview" onclick="switchTab('preview')">ดู Price List →</button></div></div>
   </div>
-
-  <script>
-    // ---------- Utilities ----------
-    const $ = (sel) => document.querySelector(sel);
-    const fmt = (n) => (Number(n) === 0 ? "0" : Math.round(Number(n) || 0).toLocaleString('th-TH'));
-    const DEPOSIT_LEVELS = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3];
-    const TERMS = [36, 48, 60];
-    const roundUp = v => Math.ceil(v);
-
-    // ค่างวดแบบ Flat rate
-    const calcMonthly = (finance, flatRate, years) => {
-      if (!finance || finance <= 0) return 0;
-      const totalInterest = finance * flatRate * years;
-      return roundUp((finance + totalInterest) / (years * 12));
-    };
-
-    // หาเงินดาวน์เพื่อให้ค่างวด = targetMonthly
-    // monthly = finance*(1 + rate*years)/(years*12)  => finance = target * years * 12 / (1 + rate*years)
-    const goalSeekDeposit = (adjustedPrice, targetMonthly, flatRate, years) => {
-      const finance = (targetMonthly * years * 12) / (1 + flatRate * years);
-      const deposit = Math.round(adjustedPrice - finance);
-      return Math.max(0, deposit);
-    };
-
-    // ---------- State ----------
-    let state = {
-      company: "บริษัท ไทยโอริกซ์ลีสซิ่ง จำกัด",
-      leaseType: "Financial Lease",
-      dateRange: "1 กุมภาพันธ์ ถึง 31 มีนาคม 2569",
-      rates: { 36: 2.99, 48: 2.99, 60: 2.99 },
-      subsidy: 20000,
-      targetMonthly: 36000,
-      cars: [
-        { id: 1, model: "BZ4X Long Range FWD", price: 1529000 },
-        { id: 2, model: "BZ4X Long Range AWD", price: 1649000 },
-        { id: 3, model: "Hilux TRAVO-e", price: 1491000 },
-      ],
-      nextId: 4,
-      activeTab: "input",
-    };
-
-    // ---------- DOM Elements ----------
-    const elCompany = $('#company');
-    const elLeaseType = $('#leaseType');
-    const elDateRange = $('#dateRange');
-    const elRate36 = $('#rate36');
-    const elRate48 = $('#rate48');
-    const elRate60 = $('#rate60');
-    const elSubsidy = $('#subsidy');
-    const elTargetMonthly = $('#targetMonthly');
-
-    const elTabInput = $('#tab-input');
-    const elTabPreview = $('#tab-preview');
-    const elBtnPrint = $('#btn-print');
-
-    const elInputSection = $('#input-section');
-    const elPreviewSection = $('#preview-section');
-
-    const elCarList = $('#car-list');
-    const elCarCount = $('#car-count');
-    const elBtnAdd = $('#btn-add');
-
-    const elQuickWrap = $('#quick-preview-wrap');
-    const elQuickPills = $('#quick-pills');
-    const elGotoPreview = $('#btn-goto-preview');
-
-    const elDocCompany = $('#doc-company');
-    const elDocLeaseType = $('#doc-leaseType');
-    const elDocDateRange = $('#doc-dateRange');
-    const elChip36 = $('#chip36');
-    const elChip48 = $('#chip48');
-    const elChip60 = $('#chip60');
-
-    const elTableWrap = $('#table-wrap');
-
-    // ---------- Renderers ----------
-    function renderCars(){
-      elCarList.innerHTML = '';
-      state.cars.forEach((car, idx) => {
-        const card = document.createElement('div');
-        card.className = 'car-card';
-
-        const badge = document.createElement('div');
-        badge.className = 'car-badge';
-        badge.textContent = String.fromCharCode(65 + idx);
-
-        const f1 = document.createElement('div');
-        f1.style.flex = '1';
-        f1.innerHTML = `
-          <div class="field">
-            <label>ชื่อรุ่น</label>
-            <div class="input-wrap">
-              <input type="text" value="${car.model || ''}" data-id="${car.id}" data-field="model" />
-            </div>
-          </div>
-        `;
-
-        const f2 = document.createElement('div');
-        f2.style.width = '180px';
-        f2.innerHTML = `
-          <div class="field">
-            <label>ราคา (บาท)</label>
-            <div class="input-wrap">
-              <input type="number" value="${car.price || 0}" data-id="${car.id}" data-field="price" />
-            </div>
-          </div>
-        `;
-
-        const btnRemove = document.createElement('button');
-        btnRemove.className = 'car-remove';
-        btnRemove.textContent = '✕';
-        btnRemove.title = 'ลบรุ่นนี้';
-        btnRemove.addEventListener('click', () => {
-          state.cars = state.cars.filter(c => c.id !== car.id);
-          renderAll();
-        });
-
-        card.appendChild(badge);
-        card.appendChild(f1);
-        card.appendChild(f2);
-        card.appendChild(btnRemove);
-        elCarList.appendChild(card);
-      });
-
-      // bind change events
-      elCarList.querySelectorAll('input').forEach(inp => {
-        inp.addEventListener('input', (e) => {
-          const id = Number(e.target.getAttribute('data-id'));
-          const field = e.target.getAttribute('data-field');
-          const value = field === 'price' ? (parseFloat(e.target.value) || 0) : e.target.value;
-          state.cars = state.cars.map(c => c.id === id ? { ...c, [field]: value } : c);
-          updateCountsAndQuick();
-        });
-      });
-
-      updateCountsAndQuick();
-    }
-
-    function updateCountsAndQuick(){
-      const validCount = state.cars.filter(c => c.model && c.price > 0).length;
-      elCarCount.textContent = `${validCount} รุ่น`;
-      renderQuickPreview();
-    }
-
-    function computePriceData(){
-      const { cars, rates, subsidy, targetMonthly } = state;
-      const valid = cars.filter(c => c.model && c.price > 0);
-      return valid.map(car => {
-        const adjustedPrice = (car.price || 0) - (subsidy || 0);
-        const rows = DEPOSIT_LEVELS.map(dp => {
-          const depositAmt = Math.round((car.price || 0) * dp);
-          const finance = adjustedPrice - depositAmt;
-          const row = { depositPct: dp, depositAmt, finance };
-          TERMS.forEach(term => {
-            const years = term / 12;
-            const rate = (rates[term] || 0) / 100;
-            row[term] = calcMonthly(finance, rate, years);
-          });
-          return row;
-        });
-
-        const goalRows = TERMS.map(term => {
-          const years = term / 12;
-          const rate = (rates[term] || 0) / 100;
-          const depositAmt = goalSeekDeposit(adjustedPrice, targetMonthly || 0, rate, years);
-          return { term, depositAmt };
-        });
-
-        return { ...car, rows, goalRows };
-      });
-    }
-
-    function renderQuickPreview(){
-      const data = computePriceData();
-      if (!data.length){ elQuickWrap.style.display = 'none'; return; }
-      elQuickWrap.style.display = 'block';
-      elQuickPills.innerHTML = '';
-      const first = data[0];
-      const sampleRows = first.rows.slice(0, 3);
-      sampleRows.forEach(row => {
-        const pill = document.createElement('div');
-        pill.className = 'pill';
-        pill.innerHTML = `
-          <span style="color:#1e293b;">${(row.depositPct * 100).toFixed(0)}%</span>
-          <span style="color:#94a3b8;">|</span>
-          <span style="color:#1e3a8a;">36m: ${fmt(row[36])}</span>
-          <span style="color:#94a3b8;">|</span>
-          <span style="color:#1e3a8a;">48m: ${fmt(row[48])}</span>
-          <span style="color:#94a3b8;">|</span>
-          <span style="color:#1e3a8a;">60m: ${fmt(row[60])}</span>
-        `;
-        elQuickPills.appendChild(pill);
-      });
-    }
-
-    function renderTable(){
-      const data = computePriceData();
-
-      if (!data.length){
-        elTableWrap.innerHTML = `
-          <div style="text-align:center; padding:60px 20px; color:var(--muted);">
-            <div style="font-size:48px; margin-bottom:12px;">📋</div>
-            <div style="font-size:16px;">เพิ่มข้อมูลรถและราคาเพื่อสร้าง Price List</div>
-          </div>
-        `;
-        return;
-      }
-
-      const headRates = `
-        <tr>
-          <th style="text-align:left;">Model</th>
-          <th>List Price</th>
-          <th>Deposit %</th>
-          <th>Deposit Amt</th>
-          <th>Finance Amt</th>
-          <th style="color:#1d4ed8; font-weight:900;">36 เดือน</th>
-          <th style="color:#16a34a; font-weight:900;">48 เดือน</th>
-          <th style="color:#b45309; font-weight:900;">60 เดือน</th>
-        </tr>
-        <tr>
-          <td colspan="5"></td>
-          <th style="color:#1d4ed8;">${state.rates[36]}%</th>
-          <th style="color:#16a34a;">${state.rates[48]}%</th>
-          <th style="color:#b45309;">${state.rates[60]}%</th>
-        </tr>
-      `;
-
-      let bodyHTML = '';
-      data.forEach((car, ci) => {
-        bodyHTML += `
-          <tr class="row-header">
-            <td colspan="8" style="padding:10px 12px;">${car.model}</td>
-          </tr>
-        `;
-
-        car.rows.forEach((row, ri) => {
-          bodyHTML += `
-            <tr>
-              ${ri === 0 ? `<td rowspan="${DEPOSIT_LEVELS.length}" style="text-align:left; vertical-align:top;"></td>` : ''}
-              ${ri === 0 ? `<td rowspan="${DEPOSIT_LEVELS.length}" style="font-weight:800;">${fmt(car.price)}</td>` : ''}
-              <td style="color:#334155;">${(row.depositPct * 100).toFixed(0)}%</td>
-              <td>${fmt(row.depositAmt)}</td>
-              <td>${fmt(row.finance)}</td>
-              <td style="font-weight:800; color:#1d4ed8;">${fmt(row[36])}</td>
-              <td style="font-weight:800; color:#16a34a;">${fmt(row[48])}</td>
-              <td style="font-weight:800; color:#b45309;">${fmt(row[60])}</td>
-            </tr>
-          `;
-        });
-
-        // Goal seek row
-        bodyHTML += `
-          <tr style="background:#fafafa; border-top:1px dashed var(--border);">
-            <td colspan="4" style="text-align:left; color:#475569; font-style:italic;">
-              Deposit for ${fmt(state.targetMonthly)} บาท/เดือน
-            </td>
-            <td></td>
-            ${TERMS.map(term => {
-              const gr = car.goalRows.find(g => g.term === term);
-              return `<td style="color:${gr && gr.depositAmt>0 ? '#64748b' : '#cbd5e1'}; font-size:12px;">${gr && gr.depositAmt>0 ? fmt(gr.depositAmt) : '–'}</td>`;
-            }).join('')}
-          </tr>
-        `;
-      });
-
-      elTableWrap.innerHTML = `
-        <div style="overflow-x:auto;">
-          <table>
-            <thead>${headRates}</thead>
-            <tbody>${bodyHTML}</tbody>
-          </table>
-
-          <div class="foot-note">
-            <div class="ttl">ราคารวมภาษีมูลค่าเพิ่ม 7%</div>
-            <div>เงื่อนไขเพิ่มเติม</div>
-            <div>- ราคาดังกล่าวเป็นราคาเช่า-เพื่อซื้อรถยนต์ ภายใต้สัญญาเช่าการเงิน (Financial Lease)</div>
-            <div>- สัญญาแบบ Financial Lease ค่างวดหักค่าใช้จ่ายบริษัทได้สูงสุด ${fmt(state.targetMonthly)} บาท</div>
-            <div>- ใช้อัตราดอกเบี้ยคงที่ (Flat Rate) ในการคำนวณสำหรับทุกช่วงเงินดาวน์และระยะเวลาผ่อน</div>
-            <div>- เกณฑ์การพิจารณาสินเชื่อและเงื่อนไขเป็นไปตามนโยบายของบริษัทฯ ขอสงวนสิทธิ์ในการแก้ไขเปลี่ยนแปลงเงื่อนไข</div>
-            <div>- กรุณาติดต่อเจ้าหน้าที่ บจก.ไทยโอริกซ์ลีสซิ่ง สำหรับใบเสนอราคาอีกครั้ง</div>
-          </div>
-        </div>
-      `;
-    }
-
-    function renderHeaderChipsAndMeta(){
-      elDocCompany.textContent = state.company || '';
-      elDocLeaseType.textContent = state.leaseType || '';
-      elDocDateRange.textContent = state.dateRange || '';
-      elChip36.textContent = `36m @ ${state.rates[36]}%`;
-      elChip48.textContent = `48m @ ${state.rates[48]}%`;
-      elChip60.textContent = `60m @ ${state.rates[60]}%`;
-    }
-
-    function renderTabs(){
-      if (state.activeTab === 'input'){
-        elInputSection.style.display = '';
-        elPreviewSection.style.display = 'none';
-        elBtnPrint.style.display = 'none';
-        elTabInput.classList.add('active');
-        elTabPreview.classList.remove('active');
-      } else {
-        elInputSection.style.display = 'none';
-        elPreviewSection.style.display = '';
-        elBtnPrint.style.display = '';
-        elTabInput.classList.remove('active');
-        elTabPreview.classList.add('active');
-      }
-    }
-
-    function renderAll(){
-      // inputs reflect state
-      elCompany.value = state.company;
-      elLeaseType.value = state.leaseType;
-      elDateRange.value = state.dateRange;
-      elRate36.value = state.rates[36];
-      elRate48.value = state.rates[48];
-      elRate60.value = state.rates[60];
-      elSubsidy.value = state.subsidy;
-      elTargetMonthly.value = state.targetMonthly;
-
-      renderTabs();
-      renderCars();
-      renderHeaderChipsAndMeta();
-      renderTable();
-    }
-
-    // ---------- Events ----------
-    // Company & meta
-    elCompany.addEventListener('input', e => { state.company = e.target.value; renderHeaderChipsAndMeta(); });
-    elLeaseType.addEventListener('input', e => { state.leaseType = e.target.value; renderHeaderChipsAndMeta(); });
-    elDateRange.addEventListener('input', e => { state.dateRange = e.target.value; renderHeaderChipsAndMeta(); });
-
-    // Rates & numbers
-    elRate36.addEventListener('input', e => { state.rates[36] = parseFloat(e.target.value)||0; renderHeaderChipsAndMeta(); renderTable(); renderQuickPreview(); });
-    elRate48.addEventListener('input', e => { state.rates[48] = parseFloat(e.target.value)||0; renderHeaderChipsAndMeta(); renderTable(); renderQuickPreview(); });
-    elRate60.addEventListener('input', e => { state.rates[60] = parseFloat(e.target.value)||0; renderHeaderChipsAndMeta(); renderTable(); renderQuickPreview(); });
-
-    elSubsidy.addEventListener('input', e => { state.subsidy = parseFloat(e.target.value)||0; renderTable(); renderQuickPreview(); });
-    elTargetMonthly.addEventListener('input', e => { state.targetMonthly = parseFloat(e.target.value)||0; renderTable(); renderQuickPreview(); });
-
-    // Tabs
-    elTabInput.addEventListener('click', () => { state.activeTab = 'input'; renderTabs(); });
-    elTabPreview.addEventListener('click', () => { state.activeTab = 'preview'; renderTabs(); renderHeaderChipsAndMeta(); renderTable(); });
-
-    // Print
-    elBtnPrint.addEventListener('click', () => window.print());
-
-    // Add car
-    elBtnAdd.addEventListener('click', () => {
-      state.cars.push({ id: state.nextId, model: '', price: 0 });
-      state.nextId += 1;
-      renderCars();
-    });
-
-    // Goto preview
-    elGotoPreview.addEventListener('click', () => {
-      state.activeTab = 'preview';
-      renderTabs();
-      renderHeaderChipsAndMeta();
-      renderTable();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-
-    // ---------- Init ----------
-    renderAll();
-  </script>
+  <div id="preview-tab"><div id="preview-controls"><div style="font-size:11px;font-weight:800;color:var(--navy-mid);text-transform:uppercase;letter-spacing:.08em">Down Steps:</div><div id="deposit-toggles"></div><div class="print-note">Print CSS mode: ไม่ใช้ transform และไม่ยืดสัดส่วน</div></div><div id="print-area"><div class="doc-header" id="doc-header"></div><div class="table-card"><div id="price-table-wrap"></div></div></div></div>
+  <div id="report-tab"><div class="report-car-selector" id="report-car-selector"></div><div id="report-print-area"><div id="report-header-wrap"></div><div class="report-table-wrap"><div id="report-table-wrap"></div></div></div></div>
+</div>
+<script>
+const LETTERS='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const ALL_DEPOSITS=[0,0.05,0.10,0.15,0.20,0.25,0.30];
+let activeDeposits=new Set(ALL_DEPOSITS);
+let DEPOSITS=ALL_DEPOSITS.slice();
+const TERMS=[36,48,60];
+let cars=[{id:1,model:'ZEEKR X Flagship AWD',price:1069000},{id:2,model:'BZ4X Long Range FWD',price:1529000},{id:3,model:'BZ4X Long Range AWD',price:1649000}];
+let nextId=4,currentTab='input',currentReportCar=null;
+const EPS=1e-7,ceilSafe=v=>Math.ceil(v-EPS);
+const fmt=n=>n===0?'0':Math.round(n).toLocaleString('th-TH');
+const fmt2=n=>(isFinite(n)?n:0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtPct=v=>(v*100).toFixed(2)+'%';
+const fmtTR=v=>(isFinite(v)?v*100:0).toFixed(4)+'%';
+const g=id=>document.getElementById(id),gv=id=>g(id).value.trim(),gn=id=>parseFloat(g(id).value)||0;
+const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+function excelRATE(nper,pmt,pv,fv=0,type=0){if(!pv||!nper)return 0;let r=0.08/12;for(let i=0;i<300;i++){const r1=1+r,r1n=Math.pow(r1,nper);let f,df;if(Math.abs(r)<1e-12){f=pv+pmt*nper+fv;df=pv*nper*(nper-1)/2;}else{f=pv*r1n+pmt*(1+r*type)*(r1n-1)/r+fv;const dr1n=nper*Math.pow(r1,nper-1);df=pv*dr1n+pmt*type*(r1n-1)/r+pmt*(1+r*type)*(dr1n*r-(r1n-1))/(r*r);}if(!isFinite(df)||df===0)break;const rNew=r-f/df;if(Math.abs(rNew-r)<1e-12)return rNew;r=isFinite(rNew)?rNew:r*0.5;}return r;}
+function calcMonthly(finance,flatRate,years){return finance<=0?0:ceilSafe(finance*(1+flatRate*years)/(years*12));}
+function goalSeekDepositPL(adjPrice,targetInVAT,flatRate,years){const finance=targetInVAT*years*12/(1+flatRate*years);return Math.max(0,Math.round(adjPrice-finance));}
+function getComBase(){const el=g('com-base');return el?el.value:'finance';}
+function calcMasterReportRow({listPrice,discount=0,downPct=0,periodYears,flatRate,comPct,incentive,targetMonthly=null,isGoal=false}){const netPrice=listPrice-discount;let downAmt,finance;if(isGoal&&targetMonthly>0){const months=periodYears*12;const financeNeeded=targetMonthly*months/(1+flatRate*periodYears);const rawDownAmt=netPrice-financeNeeded;downAmt=Math.round(Math.min(Math.max(rawDownAmt,0),netPrice));finance=netPrice-downAmt;downPct=netPrice>0?downAmt/netPrice:0;}else{downAmt=Math.round(netPrice*downPct);downAmt=Math.min(Math.max(downAmt,0),netPrice);finance=netPrice-downAmt;}const intAmtPA=flatRate*finance;const intVolume=periodYears*intAmtPA;const commission=ceilSafe((getComBase()==='finance'?finance:intVolume)*comPct);const extraCost=commission+incentive;const netIntVolume=intVolume-commission-incentive;const totalIntPct=finance>0?netIntVolume/finance:0;const months=periodYears*12;const monthlyInVat=months>0?ceilSafe((intVolume+finance)/months):0;const monthlyExVat=monthlyInVat/1.07;const actualTR=excelRATE(months,monthlyInVat,-(finance+commission*1.07+incentive*1.07),0,0)*12;const customerTR=excelRATE(months,monthlyInVat,-finance,0,0)*12;return{listPrice,discount,downPct,downAmt,finance,periodYears,flatRate,intAmtPA,intVolume,commission,incentive,extraCost,netIntVolume,totalIntPct,actualTR,monthlyInVat,monthlyExVat,customerTR,isGoal,targetMonthly};}
+function calcMasterReportData(car){const rates={36:gn('rate36')/100,48:gn('rate48')/100,60:gn('rate60')/100};const comPct=gn('com-rate')/100,incentive=gn('incentive'),target=gn('target');const rows=[],goalRows=[];TERMS.forEach(term=>{const periodYears=term/12;DEPOSITS.forEach(dp=>rows.push({...calcMasterReportRow({listPrice:car.price,discount:0,downPct:dp,periodYears,flatRate:rates[term],comPct,incentive}),term}));goalRows.push({...calcMasterReportRow({listPrice:car.price,discount:0,downPct:0,periodYears,flatRate:rates[term],comPct,incentive,targetMonthly:target,isGoal:true}),term});});return{car,rows,goalRows,comPct,incentive};}
+function calcPriceListData(){const sub=gn('subsidy'),tgt=gn('target');const rates={36:gn('rate36')/100,48:gn('rate48')/100,60:gn('rate60')/100};return cars.filter(c=>c.model&&c.price>0).map(car=>{const adj=car.price-sub;const rows=DEPOSITS.map(dp=>{const dAmt=Math.round(car.price*dp),fin=adj-dAmt,row={dp,dAmt,fin};TERMS.forEach(t=>row[t]=calcMonthly(fin,rates[t],t/12));return row;});const goal=TERMS.map(t=>({t,d:goalSeekDepositPL(adj,tgt,rates[t],t/12)}));return{...car,rows,goal};});}
+function renderCarList(){const list=g('car-list');list.innerHTML='';cars.forEach((car,i)=>{const row=document.createElement('div');row.className='car-row';row.innerHTML=`<div class="car-badge">${LETTERS[i%26]}</div><div class="f-model field"><label>ชื่อรุ่น</label><div class="input-wrap"><input class="sm" type="text" value="${esc(car.model)}" oninput="updateCar(${car.id},'model',this.value)"></div></div><div class="f-price field"><label>ราคา (บาท)</label><div class="input-wrap"><input class="sm" type="number" value="${car.price||''}" oninput="updateCar(${car.id},'price',parseFloat(this.value)||0)"></div></div><button class="btn-remove" onclick="removeCar(${car.id})">✕</button>`;list.appendChild(row);});const vc=cars.filter(c=>c.model&&c.price>0).length;g('car-sec-title').textContent=`รุ่นรถยนต์${vc?' · '+vc+' รุ่น':''}`;}
+function addCar(){cars.push({id:nextId++,model:'',price:0});render();}
+function removeCar(id){cars=cars.filter(c=>c.id!==id);render();}
+function updateCar(id,f,v){cars=cars.map(c=>c.id===id?{...c,[f]:v}:c);renderReady();renderChips();if(currentTab==='preview')renderPreview();if(currentTab==='report')renderReport();}
+let bulkParsed=[];function toggleBulk(){const panel=g('bulk-panel'),btn=g('btn-bulk'),open=panel.style.display==='none';panel.style.display=open?'block':'none';btn.classList.toggle('active',open);if(open){g('bulk-input').value='';parseBulkPreview();g('bulk-input').focus();}}
+function parseLine(line){line=line.trim();if(!line)return null;let model,priceRaw;if(line.includes('\t')){const p=line.split('\t');model=p[0].trim();priceRaw=p[p.length-1].trim();}else if(line.includes('|')){const p=line.split('|');model=p[0].trim();priceRaw=p[p.length-1].trim();}else{const segs=line.split(',');let pi=-1;for(let i=segs.length-1;i>=0;i--){const c=segs[i].trim().replace(/[฿\s]/g,'');if(/^\d+$/.test(c)&&parseInt(c)>10000){pi=i;break;}}if(pi>0){priceRaw=segs.slice(pi).join(',');model=segs.slice(0,pi).join(',').trim();}else{const t=line.split(/\s+/),l=t[t.length-1].replace(/,/g,'');if(/^\d+$/.test(l)&&parseInt(l)>10000){priceRaw=t[t.length-1];model=t.slice(0,-1).join(' ').trim();}else return{model:line,price:0,err:true};}}const price=parseInt(priceRaw.replace(/[,฿\s]/g,''));if(!model||isNaN(price)||price<=0)return{model:line,price:0,err:true};return{model,price,err:false};}
+function parseBulkPreview(){const lines=g('bulk-input').value.split('\n').filter(l=>l.trim());bulkParsed=lines.map(parseLine).filter(Boolean);const valid=bulkParsed.filter(x=>!x.err),errs=bulkParsed.filter(x=>x.err);const pw=g('bulk-preview-wrap'),pl=g('bulk-preview-list'),er=g('bulk-error'),ib=g('btn-import'),rb=g('btn-import-replace');if(!bulkParsed.length){pw.style.display='none';er.style.display='none';ib.disabled=rb.disabled=true;g('import-count').textContent='0';return;}pw.style.display='block';pl.innerHTML=bulkParsed.map((item,i)=>`<div class="bulk-preview-row ${item.err?'err':''}"><div class="bpr-idx">${LETTERS[i%26]}</div><div class="bpr-model">${item.err?'⚠ '+esc(item.model):esc(item.model)}</div>${item.err?'':`<div class="bpr-price">฿${fmt(item.price)}</div>`}</div>`).join('');er.style.display=errs.length?'block':'none';if(errs.length)er.textContent=`⚠ ${errs.length} แถวอ่านไม่ได้`;ib.disabled=rb.disabled=valid.length===0;g('import-count').textContent=valid.length;}
+function importBulk(replace){const valid=bulkParsed.filter(x=>!x.err);if(!valid.length)return;const newCars=valid.map(item=>({id:nextId++,model:item.model,price:item.price}));cars=replace?newCars:[...cars,...newCars];g('bulk-panel').style.display='none';g('btn-bulk').classList.remove('active');bulkParsed=[];render();}
+function renderChips(){const comBase=getComBase()==='finance'?'ยอดจัด':'ดอกเบี้ยรวม';g('rate-chips').innerHTML=`<div class="chip"><span class="c-term">36m</span><span class="c-at">@</span><span class="c-rate">${gn('rate36')}%</span><span class="c-label">FLAT</span></div><div class="chip"><span class="c-term">48m</span><span class="c-at">@</span><span class="c-rate">${gn('rate48')}%</span><span class="c-label">FLAT</span></div><div class="chip"><span class="c-term">60m</span><span class="c-at">@</span><span class="c-rate">${gn('rate60')}%</span><span class="c-label">FLAT</span></div><div class="chip gold" style="margin-left:auto"><span class="c-label">Com Base</span><span class="c-rate">${comBase}</span></div><div class="chip gold"><span class="c-label">Com</span><span class="c-rate">${gn('com-rate')}%</span></div><div class="chip gold"><span class="c-label">Incentive</span><span class="c-rate">฿${fmt(gn('incentive'))}</span></div><div class="chip goal-chip"><span class="c-label">Target</span><span class="c-rate">฿${fmt(gn('target'))}</span></div>`;}
+function renderReady(){const valid=cars.filter(c=>c.model&&c.price>0);const banner=g('ready-banner');if(!valid.length){banner.style.display='none';return;}banner.style.display='block';g('ready-title').textContent=`✅ พร้อมสร้างเอกสาร · ${valid.length} รุ่น`;g('ready-models').innerHTML=valid.map(c=>`<div class="model-chip"><strong>${esc(c.model)}</strong><span>฿${fmt(c.price)}</span></div>`).join('');}
+function renderDepositToggles(){const wrap=g('deposit-toggles');wrap.innerHTML=ALL_DEPOSITS.map(dp=>`<button class="deposit-toggle ${activeDeposits.has(dp)?'active':''}" onclick="toggleDeposit(${dp})">${(dp*100).toFixed(0)}%</button>`).join('');}
+function toggleDeposit(dp){activeDeposits.has(dp)?activeDeposits.delete(dp):activeDeposits.add(dp);if(activeDeposits.size===0)activeDeposits.add(dp);DEPOSITS=ALL_DEPOSITS.filter(d=>activeDeposits.has(d));renderDepositToggles();if(currentTab==='preview')renderPreview();if(currentTab==='report')renderReport();}
+function switchTab(tab){currentTab=tab;g('input-tab').style.display=tab==='input'?'block':'none';g('preview-tab').style.display=tab==='preview'?'block':'none';g('report-tab').style.display=tab==='report'?'block':'none';g('btn-tab-input').classList.toggle('active',tab==='input');g('btn-tab-preview').classList.toggle('active',tab==='preview');g('btn-tab-report').classList.toggle('active',tab==='report');const show=tab==='preview'||tab==='report';g('btn-print').style.display=show?'inline-flex':'none';g('btn-excel').style.display=show?'inline-flex':'none';if(tab==='preview')renderPreview();if(tab==='report')renderReport();}
+function renderPreview(){const data=calcPriceListData();g('doc-header').innerHTML=`<div style="display:flex;align-items:center;gap:12px"><img src="orix_logo.png" alt="ORIX" class="doc-logo" onerror="this.style.display='none'"><div><div class="doc-title-label">ใบเสนอราคา · Financial Lease</div><div class="doc-company">${esc(gv('company'))}</div><div class="doc-sub">บริการลีสซิ่งรถยนต์ · ${esc(gv('lease-type'))}</div></div></div><div><div class="doc-date-label">ราคาตั้งแต่วันที่</div><div class="doc-date">${esc(gv('date-range'))}</div></div>`;if(!data.length){g('price-table-wrap').innerHTML='<div style="padding:48px;text-align:center;color:var(--text-muted)">ไม่มีข้อมูลรถ</div>';return;}let html=`<table class="price-table"><colgroup><col style="width:22%"><col style="width:10%"><col style="width:4%"><col style="width:12%"><col style="width:12%"><col style="width:13%"><col style="width:13%"><col style="width:14%"></colgroup><thead><tr class="hd-main"><th class="left">MODEL · LIST PRICE</th><th>DOWN %</th><th></th><th>DOWN AMT</th><th>FINANCE AMT</th><th class="col-36">36 เดือน</th><th class="col-48">48 เดือน</th><th class="col-60">60 เดือน</th></tr><tr class="hd-rate"><td colspan="5">Flat Rate · ราคารวม VAT 7%</td><td class="rate-val">${gn('rate36')}%</td><td class="rate-val">${gn('rate48')}%</td><td class="rate-val">${gn('rate60')}%</td></tr></thead><tbody>`;data.forEach((car,ci)=>{html+=`<tr class="brand-row ${ci>0?'has-border':''}"><td>${esc(car.model)}</td><td colspan="4" style="text-align:right">ราคา <strong>฿${fmt(car.price)}</strong></td><td colspan="3"></td></tr>`;car.rows.forEach(row=>{html+=`<tr class="dp-row"><td></td><td>${(row.dp*100).toFixed(0)}%</td><td></td><td>${fmt(row.dAmt)}</td><td>${fmt(row.fin)}</td><td class="monthly m36">${fmt(row[36])}</td><td class="monthly m48">${fmt(row[48])}</td><td class="monthly m60">${fmt(row[60])}</td></tr>`;});const gs=t=>car.goal.find(x=>x.t===t);const cell=x=>x&&x.d>0?`<td class="g-val">${fmt(x.d)}</td>`:`<td class="g-val">–</td>`;html+=`<tr class="goal-row"><td colspan="5">📌 Down สำหรับค่างวด <strong>${fmt(gn('target'))}</strong> บ./ด. (In VAT)</td>${cell(gs(36))}${cell(gs(48))}${cell(gs(60))}</tr>`;});html+=`</tbody></table><div class="tbl-footer"><div class="vat-note">ราคารวม VAT 7% · Goal Seek แสดงในราคา In VAT</div><div class="cond-list"><span>• ราคาเช่าเพื่อซื้อรถยนต์ภายใต้สัญญา Financial Lease คำนวณด้วย Flat Rate</span><span>• เกณฑ์การพิจารณาสินเชื่อเป็นไปตามนโยบายบริษัทฯ</span><span>• กรุณาติดต่อเจ้าหน้าที่ บจก.ไทยโอริกซ์ลีสซิ่ง เพื่อขอใบเสนอราคาอีกครั้ง</span></div></div>`;g('price-table-wrap').innerHTML=html;}
+function actualTRClass(actualTR){
+  const pct=(isFinite(actualTR)?actualTR:0)*100;
+  if(pct<5.0)return 'actual-red';
+  if(pct<5.5)return 'actual-orange';
+  return 'actual-green';
+}
+function masterReportRow(row,modelLabel='',isGoal=false){const cls=isGoal?'rt-goal master-goal':'rt-row';const atrClass=actualTRClass(row.actualTR);return`<tr class="${cls}"><td class="td-model">${esc(modelLabel)}</td><td>${fmt(row.listPrice)}</td><td>${fmt(row.discount)}</td><td class="td-yellow">${fmtPct(row.downPct)}</td><td>${fmt(row.downAmt)}</td><td class="td-finance">${fmt(row.finance)}</td><td class="td-yellow">${row.periodYears}</td><td class="td-yellow">${(row.flatRate*100).toFixed(2)}%</td><td>${fmt(row.intAmtPA)}</td><td>${fmt(row.intVolume)}</td><td>${fmt(row.commission)}</td><td class="td-blue">${fmt(row.incentive)}</td><td class="td-blue">${fmt(row.extraCost)}</td><td>${fmt(row.netIntVolume)}</td><td>${fmtPct(row.totalIntPct)}</td><td class="${atrClass}">${fmtTR(row.actualTR)}</td><td class="td-monthly">${fmt(row.monthlyInVat)}</td><td>${fmt2(row.monthlyExVat)}</td><td class="td-green">${fmtTR(row.customerTR)}</td></tr>`;}
+function buildCarReportHTML(car){const data=calcMasterReportData(car);const comBase=getComBase()==='finance'?'ยอดจัด':'ดอกเบี้ยรวม';const headerHTML=`<div class="report-doc-header"><div><div class="report-tag">รายงานการคำนวณ · Internal</div><div class="report-car-name">${esc(car.model)}</div><div class="report-car-price">ราคาขาย ฿${fmt(car.price)} · ${esc(gv('company'))}</div></div><div class="report-params"><div class="rparam hl"><div class="rparam-label">Rate 36m</div><div class="rparam-val">${gn('rate36')}%</div></div><div class="rparam hl"><div class="rparam-label">Rate 48m</div><div class="rparam-val">${gn('rate48')}%</div></div><div class="rparam hl"><div class="rparam-label">Rate 60m</div><div class="rparam-val">${gn('rate60')}%</div></div><div class="rparam"><div class="rparam-label">Com Base</div><div class="rparam-val">${comBase}</div></div><div class="rparam"><div class="rparam-label">Com Rate</div><div class="rparam-val">${gn('com-rate')}%</div></div><div class="rparam"><div class="rparam-label">Incentive</div><div class="rparam-val">฿${fmt(gn('incentive'))}</div></div><div class="rparam goal-p"><div class="rparam-label">Target</div><div class="rparam-val">฿${fmt(gn('target'))}</div></div></div></div>`;let tableHTML=`<table class="master-report-table"><colgroup><col class="c-model"><col class="c-num"><col class="c-small"><col class="c-small"><col class="c-num"><col class="c-num"><col class="c-small"><col class="c-small"><col class="c-num"><col class="c-num"><col class="c-num"><col class="c-num"><col class="c-num"><col class="c-num"><col class="c-small"><col class="c-tr"><col class="c-num"><col class="c-num"><col class="c-tr"></colgroup><thead><tr><th>Model</th><th>List price</th><th>Discount</th><th class="yellow">Down%</th><th>Down Amt.</th><th>Finance potion</th><th class="yellow">Contract period</th><th class="yellow">Interest %</th><th>Int. Amt. p.a.</th><th>Int. volume</th><th>Commission</th><th class="blue">Incentive</th><th class="blue">Extra Cost</th><th>Net int. vol.</th><th>Total int. %</th><th class="red">Actual TR</th><th>Monthly<br>(In vat)</th><th>Monthly<br>(Ex vat)</th><th class="green">Customer TR</th></tr></thead><tbody>`;TERMS.forEach(term=>{const label=term===36?'3 ปี / 36 เดือน':term===48?'4 ปี / 48 เดือน':'5 ปี / 60 เดือน';tableHTML+=`<tr class="rt-period-header"><td colspan="19">${label}</td></tr>`;data.rows.filter(r=>r.term===term).forEach((row,idx)=>tableHTML+=masterReportRow(row,idx===0?car.model:''));const goal=data.goalRows.find(r=>r.term===term);if(goal)tableHTML+=masterReportRow(goal,'Goal Seek',true);});tableHTML+='</tbody></table>';return{headerHTML,tableHTML};}
+function renderReport(){const valid=cars.filter(c=>c.model&&c.price>0);const selector=g('report-car-selector'),headerWrap=g('report-header-wrap'),tableWrap=g('report-table-wrap');if(!valid.length){selector.innerHTML='';headerWrap.innerHTML='';tableWrap.innerHTML='<div class="report-empty">ยังไม่มีรุ่นรถ</div>';return;}if(!currentReportCar||!valid.find(c=>c.id===currentReportCar))currentReportCar=valid[0].id;selector.innerHTML=valid.map(c=>`<button class="report-car-btn ${c.id===currentReportCar?'active':''}" onclick="selectReportCar(${c.id})">${esc(c.model)}</button>`).join('')+`<button class="report-car-btn" style="margin-left:auto;background:var(--teal-light);border-color:var(--teal);color:var(--teal)" onclick="printAllReports()">🖨 พิมพ์ทุกรุ่น</button>`;const car=valid.find(c=>c.id===currentReportCar);const{headerHTML,tableHTML}=buildCarReportHTML(car);headerWrap.innerHTML=headerHTML;tableWrap.innerHTML=tableHTML;}
+function selectReportCar(id){currentReportCar=id;renderReport();}
+function render(){renderCarList();renderChips();renderReady();if(currentTab==='preview')renderPreview();if(currentTab==='report')renderReport();}
+function setPrintPage(orientation){let s=g('_print_orient');if(!s){s=document.createElement('style');s.id='_print_orient';document.head.appendChild(s);}s.textContent=`@media print{@page{size:A4 ${orientation};margin:8mm 10mm;}}`;}
+let _bahtMap=null;function _removeBahtSymbols(root){_bahtMap=new Map();(function walk(node){if(!node)return;if(node.nodeType===Node.TEXT_NODE){const orig=node.nodeValue;if(orig&&orig.includes('฿')){_bahtMap.set(node,orig);node.nodeValue=orig.replace(/฿/g,'');}}else{const tag=node.nodeName.toLowerCase();if(tag==='script'||tag==='style')return;for(let i=0;i<node.childNodes.length;i++)walk(node.childNodes[i]);}})(root);}function _restoreBahtSymbols(){if(!_bahtMap)return;for(const[node,text]of _bahtMap.entries()){try{node.nodeValue=text}catch(e){}}_bahtMap=null;}
+function printSinglePage(){if(currentTab==='report'){renderReport();setPrintPage('landscape');document.body.className='printing-report';_removeBahtSymbols(g('report-tab'));}else{renderPreview();setPrintPage('portrait');document.body.className='printing-pricelist';_removeBahtSymbols(g('preview-tab'));}setTimeout(()=>window.print(),160);}
+function printAllReports(){const valid=cars.filter(c=>c.model&&c.price>0);if(!valid.length)return;let container=g('_all-reports-print');if(container)container.remove();container=document.createElement('div');container.id='_all-reports-print';container.style.display='none';valid.forEach(car=>{const{headerHTML,tableHTML}=buildCarReportHTML(car);const block=document.createElement('div');block.className='all-report-block';block.innerHTML=headerHTML+`<div class="report-table-wrap">${tableHTML}</div>`;container.appendChild(block);});document.body.appendChild(container);setPrintPage('landscape');document.body.className='printing-all-reports';_removeBahtSymbols(container);setTimeout(()=>window.print(),160);}
+window.addEventListener('afterprint',()=>{document.body.className='';const c=g('_all-reports-print');if(c)c.remove();_restoreBahtSymbols();});
+function exportExcel(){currentTab==='report'?exportReportExcel():exportPriceListExcel();}
+function exportPriceListExcel(){const data=calcPriceListData();if(!data.length)return;const wb=XLSX.utils.book_new(),wsData=[];wsData.push([gv('company')]);wsData.push(['Financial Lease Price List · '+gv('date-range')]);wsData.push([`Rate36 ${gn('rate36')}% | Rate48 ${gn('rate48')}% | Rate60 ${gn('rate60')}% | Subsidy ${gn('subsidy')} | Target ${gn('target')}`]);wsData.push([]);wsData.push(['Model','List Price','Down %','Down Amt','Finance Amt','Monthly 36m','Monthly 48m','Monthly 60m']);data.forEach(car=>{car.rows.forEach((row,ri)=>wsData.push([ri===0?car.model:'',ri===0?car.price:'',(row.dp*100).toFixed(0)+'%',row.dAmt,row.fin,row[36],row[48],row[60]]));wsData.push([]);});const ws=XLSX.utils.aoa_to_sheet(wsData);ws['!cols']=[{wch:32},{wch:14},{wch:9},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14}];XLSX.utils.book_append_sheet(wb,ws,'Price List');XLSX.writeFile(wb,'ThaiOrix_PriceList_'+new Date().toISOString().slice(0,10)+'.xlsx');}
+function exportReportExcel(){const valid=cars.filter(c=>c.model&&c.price>0);if(!valid.length)return;const wb=XLSX.utils.book_new();valid.forEach(car=>{const data=calcMasterReportData(car);const wsData=[];wsData.push([car.model]);wsData.push([`List price: ${car.price} | Com base: ${getComBase()==='finance'?'ยอดจัด':'ดอกเบี้ยรวม'} | Com: ${gn('com-rate')}% | Incentive: ${gn('incentive')} | Target: ${gn('target')}`]);wsData.push([]);wsData.push(['Model','List price','Discount','Down%','Down Amt.','Finance potion','Contract period','Interest %','Int. Amt. p.a.','Int. volume','Commission','Incentive','Extra Cost','Net int. vol.','Total int. %','Actual TR','Monthly (In vat)','Monthly (Ex vat)','Customer TR']);TERMS.forEach(term=>{wsData.push([`${term} เดือน`]);data.rows.filter(r=>r.term===term).forEach((r,idx)=>wsData.push([idx===0?car.model:'',r.listPrice,r.discount,r.downPct,r.downAmt,r.finance,r.periodYears,r.flatRate,r.intAmtPA,r.intVolume,r.commission,r.incentive,r.extraCost,r.netIntVolume,r.totalIntPct,r.actualTR,r.monthlyInVat,r.monthlyExVat,r.customerTR]));const goal=data.goalRows.find(r=>r.term===term);if(goal)wsData.push(['Goal Seek',goal.listPrice,goal.discount,goal.downPct,goal.downAmt,goal.finance,goal.periodYears,goal.flatRate,goal.intAmtPA,goal.intVolume,goal.commission,goal.incentive,goal.extraCost,goal.netIntVolume,goal.totalIntPct,goal.actualTR,goal.monthlyInVat,goal.monthlyExVat,goal.customerTR]);});const ws=XLSX.utils.aoa_to_sheet(wsData);ws['!cols']=[{wch:24},...Array(18).fill({wch:13})];XLSX.utils.book_append_sheet(wb,ws,car.model.replace(/[:\\\/\?\*\[\]]/g,'').slice(0,30));});XLSX.writeFile(wb,'ThaiOrix_MasterReport_'+new Date().toISOString().slice(0,10)+'.xlsx');}
+render();renderDepositToggles();switchTab('input');
+</script>
 </body>
 </html>
